@@ -430,6 +430,9 @@ unsigned int pk_total_num =0;
 
 static int next_ii=0;
 
+static char last_pkg_data[17];
+static bool flag_search_both_pkg=0;
+
 
 static bool capture_process(void)
 {
@@ -461,7 +464,24 @@ int mm;
 			char *gm_p = iio_buffer_start(rxbuf);
 			//u_char *gm_p = iio_buffer_start(rxbuf);
 //printf("iio_buffer_start(rxbuf) %x: iio_buffer_end(rxbuf) %x,iio_buffer_end(rxbuf) %x\n",iio_buffer_start(rxbuf),iio_buffer_end(rxbuf),iio_buffer_step(rxbuf));
+if(flag_search_both_pkg ==1)
+{
+int kkk =0;
+memcpy(last_pkg_data+8,gm_p,8);
+//char * last_pkg_data_p =last_pkg_data;
+			for(;kkk<8;kkk++)
+			{
+				if(strncmp(last_pkg_data+kkk,sync_head,8)==0)
+				{
+				pk_total_num= *(gm_p+kkk)+((*(gm_p+kkk+1))<<8);
+				next_ii=kkk+8;
+				pkg_cont_flag=1;
 
+				break;
+				}
+			}
+flag_search_both_pkg =0;
+}
 
 			int ii =0;
 			int k=0;
@@ -487,6 +507,8 @@ if(!pkg_cont_flag)
 			{
 			lost_num++;
 			//printf("sync_head lost:%d\n",lost_num);
+memcpy(last_pkg_data,gm_p,8);
+flag_search_both_pkg =1;
 
 			return 0;
 			}
@@ -519,6 +541,7 @@ else
 {
 ii=next_ii;
 gm_p=gm_p+ii;
+next_ii=0;
 }
 		
 
