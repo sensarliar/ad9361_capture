@@ -209,7 +209,7 @@ void getPacket(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * p
 {
   short * id = (short *)arg;
   
-  printf("id: %d\n", ++(*id));
+//  printf("id: %d\n", ++(*id));
 u_char *buf;
 
 
@@ -353,7 +353,7 @@ static unsigned int buf_send_p=0;
 static bool capture_process(void)
 {
 static int lost_num =0;
-	unsigned int i;
+//	unsigned int i;
 
 			ssize_t ret = iio_buffer_refill(rxbuf);
 
@@ -417,9 +417,57 @@ int sample_count=512;
 
 				if(buf_send_p==pk_total_num)
 				{
+
+char exchange[6];
+
+exchange[0]=buff_send[0];
+exchange[1]=buff_send[1];
+exchange[2]=buff_send[2];
+exchange[3]=buff_send[3];
+exchange[4]=buff_send[4];
+exchange[5]=buff_send[5];
+
+
+buff_send[0]=buff_send[6];
+buff_send[1]=buff_send[7];
+buff_send[2]=buff_send[8];
+buff_send[3]=buff_send[9];
+buff_send[4]=buff_send[10];
+buff_send[5]=buff_send[11];
+
+buff_send[6]=exchange[0];
+buff_send[7]=exchange[1];
+buff_send[8]=exchange[2];
+buff_send[9]=exchange[3];
+buff_send[10]=exchange[4];
+buff_send[11]=exchange[5];
+
+/*
+
+buff_send[0]=0xff;
+buff_send[1]=0xff;
+buff_send[2]=0xff;
+buff_send[3]=0xff;
+buff_send[4]=0xff;
+buff_send[5]=0xff;
+
+buff_send[6]=0x66;
+buff_send[7]=0x0d;
+buff_send[8]=0x06;
+buff_send[9]=0xc8;
+buff_send[10]=0x0a;
+buff_send[11]=0xe3;
+*/
+char gg;
+gg=buff_send[29];
+buff_send[29]=buff_send[33];
+//buff_send[29]=0x11;
+buff_send[33]=gg;
+
+
 				//printf("data buf_send_p %d,pk_total_num:%d\n",buf_send_p,pk_total_num);
-				int inject_num=pcap_inject(device_eth1,buff_send,pk_total_num);
-				printf("send out datanum: %d,id:%d\n",inject_num,packet_id);
+				int inject_num=pcap_inject(device_eth0,buff_send,pk_total_num);
+				//printf("send out datanum: %d,id:%d\n",inject_num,packet_id);
 				buf_send_p=0;
 				}
 				else if(buf_send_p>pk_total_num)
@@ -453,8 +501,8 @@ int main (int argc, char **argv)
 	struct iio_device *rx;
 
 	// RX and TX sample counters
-	size_t nrx = 0;
-	size_t ntx = 0;
+	//size_t nrx = 0;
+	//size_t ntx = 0;
 
 	// Stream configurations
 	struct stream_cfg rxcfg;
@@ -500,6 +548,7 @@ int main (int argc, char **argv)
 //	iio_channel_enable(tx0_q);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
+iio_device_set_kernel_buffers_count(rx,128);
 	rxbuf = iio_device_create_buffer(rx, IIO_BUFFER_SIZE, false);
 	if (!rxbuf) {
 		perror("Could not create RX buffer");
