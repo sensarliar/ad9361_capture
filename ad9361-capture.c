@@ -19,7 +19,7 @@
 
    #include <pthread.h>
 #include "timer.h"
-
+#include <linux/fs.h>
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -48,8 +48,9 @@
 #include <math.h>
 #include <unistd.h>
 #include "rxfifo_reset.h"
+#include "mwipcore_ioctl.h"
 
-#define CHECKSUM_ENABLE
+//#define CHECKSUM_ENABLE
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
@@ -254,13 +255,32 @@ if(type == TX)
 
 unsigned int rd_txfifo_hf_flag(void)
 {
+static unsigned int data_rd = 0;
+struct raw_access_data * rd_data_gm;
+(rd_data_gm)->offset_addr =0;
+(rd_data_gm)->data_length =1;
+(rd_data_gm)->data_buf = &data_rd;
+
+
 	unsigned int hf_flag=0;
 //	uio_rd("/dev/mwipcore2", 0x00, &hf_flag);
 //gm_rd("/dev/mwipcore2", &hf_flag);
-//msync(uio_addr,100,MS_INVALIDATE);
-lseek(uio_fd,0,SEEK_SET);
-	hf_flag = *((unsigned *) (uio_addr));
+
+//lseek(uio_fd,0,SEEK_SET);
+//msync(uio_addr,100,MS_INVALIDATE|MS_SYNC);
+//barrier();
+//__asm__ __volatile__("":::"memory");
+/*
+	hf_flag = *((volatile unsigned *) (uio_addr));
 	hf_flag = hf_flag&0x00000001;
+*/
+
+ioctl(uio_fd,MWIPCORE_REGISTER_READ,rd_data_gm);
+//unlocked_ioctl(uio_fd,1,rd_data_gm);
+//hf_flag = *((unsigned int*)((rd_data_gm)->data_buf));
+hf_flag = data_rd;
+hf_flag = hf_flag&0x00000001;
+printf("hf_flag data:%x\n",data_rd);
 	return hf_flag;
 
 }
@@ -1027,7 +1047,7 @@ open_eth0();
 		return -1;
 	}
 
-	uio_addr = mmap(NULL, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, uio_fd, 0);
+//	uio_addr = mmap(NULL, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, uio_fd, 0);
 
 
 
