@@ -258,7 +258,7 @@ unsigned int jjj=8;
 	 len_left=len_left-(1024-8);
 	}while(len_left>0);
 
-usleep(300);
+//usleep(300);
 
 
 }
@@ -548,7 +548,7 @@ int main (int argc, char **argv)
 //	iio_channel_enable(tx0_q);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
-iio_device_set_kernel_buffers_count(rx,128);
+		iio_device_set_kernel_buffers_count(rx,128);
 	rxbuf = iio_device_create_buffer(rx, IIO_BUFFER_SIZE, false);
 	if (!rxbuf) {
 		perror("Could not create RX buffer");
