@@ -251,7 +251,7 @@ if(type == TX)
 	return true;
 }
 
-static flag_txfifo=0;
+static bool flag_txfifo=0;
 
 void my_signal_func(int signum)
 {
@@ -370,9 +370,9 @@ unsigned int jjj=16;
 while(flag_txfifo)
 {
 flag_txfifo=0;
-flag_num++;
+//flag_num++;
 //printf("tx fifo half full flag was set %d.\n",flag_num);
-	usleep(10);
+	usleep(200);
 }
 
 
@@ -400,15 +400,16 @@ flag_num++;
 		{
 		memset((u_char *)(iio_buffer_start(dds_buffer_gm))+jjj,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-jjj);
 		//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
-
+usleep(2);
+/*
 while(flag_txfifo)
 {
 flag_txfifo=0;
-flag_num++;
+//flag_num++;
 //printf("tx fifo half full flag was set %d.\n",flag_num);
-	usleep(10);
+	usleep(64);
 }
-
+*/
 		iio_buffer_push(dds_buffer_gm);
 		}
 
