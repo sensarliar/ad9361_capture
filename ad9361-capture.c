@@ -256,7 +256,8 @@ if(type == TX)
 unsigned int rd_txfifo_hf_flag(void)
 {
 static unsigned int data_rd = 0;
-struct raw_access_data * rd_data_gm;
+static struct raw_access_data rd_data;
+struct raw_access_data * rd_data_gm = &rd_data;
 (rd_data_gm)->offset_addr =0;
 (rd_data_gm)->data_length =1;
 (rd_data_gm)->data_buf = &data_rd;
@@ -280,7 +281,7 @@ ioctl(uio_fd,MWIPCORE_REGISTER_READ,rd_data_gm);
 //hf_flag = *((unsigned int*)((rd_data_gm)->data_buf));
 hf_flag = data_rd;
 hf_flag = hf_flag&0x00000001;
-printf("hf_flag data:%x\n",data_rd);
+//printf("hf_flag data:%x\n",data_rd);
 	return hf_flag;
 
 }
@@ -384,7 +385,7 @@ while(rd_txfifo_hf_flag())
 {
 flag_num++;
 //printf("tx fifo half full flag was set %d.\n",flag_num);
-	usleep(10);
+	usleep(3);
 }
 
 
@@ -417,7 +418,7 @@ while(rd_txfifo_hf_flag())
 {
 flag_num++;
 //printf("tx fifo half full flag was set %d.\n",flag_num);
-	usleep(10);
+	usleep(3);
 }
 
 		iio_buffer_push(dds_buffer_gm);
