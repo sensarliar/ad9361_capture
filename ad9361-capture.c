@@ -372,7 +372,7 @@ while(flag_txfifo)
 flag_txfifo=0;
 //flag_num++;
 //printf("tx fifo half full flag was set %d.\n",flag_num);
-	usleep(200);
+	usleep(300);
 }
 
 
@@ -400,14 +400,14 @@ flag_txfifo=0;
 		{
 		memset((u_char *)(iio_buffer_start(dds_buffer_gm))+jjj,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-jjj);
 		//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
-usleep(2);
+usleep(1);
 /*
 while(flag_txfifo)
 {
 flag_txfifo=0;
 //flag_num++;
 //printf("tx fifo half full flag was set %d.\n",flag_num);
-	usleep(64);
+	usleep(256);
 }
 */
 		iio_buffer_push(dds_buffer_gm);
@@ -448,6 +448,7 @@ ret=pthread_mutex_trylock(&mutex);
 {
 buf_temp = iio_buffer_start(dds_buffer_gm);
 memset(buf_temp,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE);
+//if(flag_txfifo==0)
 iio_buffer_push(dds_buffer_gm);
 }
                                              
