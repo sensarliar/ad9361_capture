@@ -1,0 +1,5 @@
+ad9361-iiostream
+iio-monitor
+!Makefile
+*.o
+*~
