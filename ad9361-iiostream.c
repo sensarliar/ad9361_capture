@@ -40,6 +40,8 @@
 #endif
 #include <matio.h>
 
+#include <math.h>
+
 
 
 /* helper macros */
@@ -49,6 +51,7 @@
 #define IIO_BUFFER_SIZE 512
 
   pcap_t * device_eth0; 
+pcap_t * device_eth1;
 struct iio_buffer *dds_buffer_gm;
 
 
@@ -298,6 +301,156 @@ device_eth0= device;
 
 
 
+static void open_eth1(viod)
+{
+
+char errBuf[PCAP_ERRBUF_SIZE], * devStr;
+  
+devStr = "eth1";
+  
+  if(devStr)
+  {
+    printf("success: device: %s\n", devStr);
+  }
+  else
+  {
+    printf("error: %s\n", errBuf);
+    exit(1);
+  }
+  
+  /* open a device, wait until a packet arrives */
+  pcap_t * device = pcap_open_live(devStr, 65535, 1, 0, errBuf);
+  
+  if(!device)
+  {
+    printf("error: pcap_open_live(): %s\n", errBuf);
+    exit(1);
+  }
+
+device_eth1= device;
+
+}
+
+
+
+
+
+
+
+gint capture_function = 0;
+
+bool stop_capture =0;
+//static bool completed =0;
+static int last_pk_id=0;
+static u_char buff_send[65535];
+static unsigned int buf_send_p=0;
+
+
+
+static gboolean capture_process(void)
+{
+static int lost_num =0;
+	unsigned int i;
+
+	if (stop_capture == 1)
+		goto capture_stop_check;
+
+		
+
+
+			ssize_t ret = iio_buffer_refill(rxbuf);
+
+//printf("o_buffer_refil ret:%d: sample_count:%d,nb_channels:%d\n",(int)ret,(int)sample_count,nb_channels);
+			if (ret < 0) {
+if(ret!=-110)
+{
+				fprintf(stderr, "Error while reading data: %s\n", strerror(-ret));
+				//stop_sampling();
+				goto capture_stop_check;
+}
+else
+{
+printf("iio_buffer_refill time out 1s");
+goto capture_stop_check;
+}
+			}
+
+
+	u_char *gm_p = iio_buffer_start(rxbuf);
+				int ii =0;
+				if(0xaa!=*gm_p)
+				{
+				lost_num++;
+				printf("lost:%d\n",lost_num);
+				return 0;
+				}
+				unsigned int pk_total_num= *((short *)gm_p+1);
+				int this_pk_num=*((short *)gm_p+2);
+				int packet_id= *((short *)gm_p+3);
+
+				//printf("all num:%d\n",pk_total_num);
+				//printf("this packet:%d\n",this_pk_num);
+				//printf("packet id:%d\n",packet_id);
+
+				if(buf_send_p>0)
+				{
+					if(last_pk_id!=packet_id)
+					{
+				buf_send_p=0;
+				printf("packet not incomplete!\n");
+				//break;
+					}
+
+				}
+
+				for(;(ii<sample_count*2)&&(ii<this_pk_num+8);ii++)
+				{
+				//if((ii<6)||(ii>sample_count*2-3))
+				//printf("data count %d: value %d\n",ii,*(gm_p));
+		
+					if(ii>7)
+					{
+					buff_send[buf_send_p]=*(gm_p);
+					buf_send_p++;
+
+					}
+
+				gm_p++;
+				}
+
+
+				if(buf_send_p==pk_total_num)
+				{
+				int ret=pcap_inject(device_eth1,buff_send,pk_total_num);
+				printf("send out datanum: %d,id:%d\n",ret,packet_id);
+				buf_send_p=0;
+				}
+				else if(buf_send_p>pk_total_num)
+				{
+				printf("something wrong\n");
+				buf_send_p=0;
+				}
+				else
+				{
+				last_pk_id = packet_id;
+				}
+
+
+
+
+capture_stop_check:
+	if (stop_capture == 1)
+		capture_function = 0;
+
+	return !stop_capture;
+}
+
+
+
+
+
+
+
 /* simple configuration and streaming */
 int main (int argc, char **argv)
 {
@@ -365,6 +518,7 @@ int main (int argc, char **argv)
 	}
 
 open_eth0();
+open_eth1();
 
 
 dds_buffer_gm =txbuf;
@@ -375,37 +529,10 @@ g_thread_new("pcap loop", (void *) &always_loop, NULL);
 
 	while (!stop)
 	{
-		ssize_t nbytes_rx, nbytes_tx;
-		void *p_dat, *p_end;
-		ptrdiff_t p_inc;
+		ssize_t nbytes_rx =0, nbytes_tx =0;
 
-		// Schedule TX buffer
-		nbytes_tx = iio_buffer_push(txbuf);
-		if (nbytes_tx < 0) { printf("Error pushing buf %d\n", (int) nbytes_tx); shutdown(); }
+capture_process();
 
-		// Refill RX buffer
-		nbytes_rx = iio_buffer_refill(rxbuf);
-		if (nbytes_rx < 0) { printf("Error refilling buf %d\n",(int) nbytes_rx); shutdown(); }
-
-		// READ: Get pointers to RX buf and read IQ from RX buf port 0
-		p_inc = iio_buffer_step(rxbuf);
-		p_end = iio_buffer_end(rxbuf);
-		for (p_dat = iio_buffer_first(rxbuf, rx0_i); p_dat < p_end; p_dat += p_inc) {
-			// Example: swap I and Q
-			const int16_t i = ((int16_t*)p_dat)[0]; // Real (I)
-			//const int16_t q = ((int16_t*)p_dat)[1]; // Imag (Q)
-			((int16_t*)p_dat)[0] = i;
-			//((int16_t*)p_dat)[1] = i;
-		}
-
-		// WRITE: Get pointers to TX buf and write IQ to TX buf port 0
-		p_inc = iio_buffer_step(txbuf);
-		p_end = iio_buffer_end(txbuf);
-		for (p_dat = iio_buffer_first(txbuf, tx0_i); p_dat < p_end; p_dat += p_inc) {
-			// Example: fill with zeros
-			((int16_t*)p_dat)[0] = 0; // Real (I)
-			//((int16_t*)p_dat)[1] = 0; // Imag (Q)
-		}
 
 		// Sample counter increment and status output
 		nrx += nbytes_rx / iio_device_get_sample_size(rx);
