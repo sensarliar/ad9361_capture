@@ -49,6 +49,7 @@
 #define GHZ(x) ((long long)(x*1000000000.0 + .5))
 
 #define IIO_BUFFER_SIZE 512
+#define IIO_BUFFER_BUS_WIDTHS 8
 
   pcap_t * device_eth0; 
 pcap_t * device_eth1;
@@ -252,31 +253,32 @@ unsigned int jjj=16;
             sum = do_checksum_math((uint16_t *)packet, pkthdr->len);
             sum = CHECKSUM_CARRY(sum);	
 	#endif
-	
+
+//printf("iio_buffer_start(dds_buffer_gm) %x: iio_buffer_end(dds_buffer_gm) %x,iio_buffer_end(dds_buffer_gm) %x\n",iio_buffer_start(dds_buffer_gm),iio_buffer_end(dds_buffer_gm),iio_buffer_step(dds_buffer_gm));	
 	do{
 
 		buf = iio_buffer_start(dds_buffer_gm);
-		buf[0]=0x44;
+		buf[0]=0x22;
 		//buf[1]=(u_char)(*id);
-buf[1]=0x55;
-buf[2]=0xBB;
-buf[3]=0x66;
-buf[4]=0xCC;
+buf[1]=0x33;
+buf[2]=0x44;
+buf[3]=0x55;
+buf[4]=0x66;
 buf[5]=0x77;
-buf[6]=0xDD;
-buf[7]=0x88;
+buf[6]=0x88;
+buf[7]=0x99;
 		buf[8]=(u_char)((pkthdr->len)&0xff);
 		buf[9]=(u_char)(((pkthdr->len)&0xff00)>>8);
 
 		buf[12]=(u_char)((*id)&0xff);
 		buf[13]=(u_char)(((*id)&0xff00)>>8);
 
-		if(len_left>2*IIO_BUFFER_SIZE-16)
+		if(len_left>IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)
 		{
 		//buf[4]=0xf8;
 		//buf[5]=0x03;	
-		buf[10]=(u_char)((2*IIO_BUFFER_SIZE-16)&0xff);
-		buf[11]=(u_char)(((2*IIO_BUFFER_SIZE-16)&0xff00)>>8);	
+		buf[10]=(u_char)((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff);
+		buf[11]=(u_char)(((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff00)>>8);	
 		}else
 		{
 		buf[10]=(u_char)(len_left&0xff);
@@ -290,9 +292,11 @@ buf[7]=0x88;
 	#endif
 		  for(; i<pkthdr->len; )
   			{
-				buf[jjj] = packet[i];
+				//buf[jjj] = packet[i];
+buf[jjj] = (i/8)*8+(7-i%8);
+//buf[jjj] = i;
 				++i,++jjj;
-				if(jjj>=2*IIO_BUFFER_SIZE)
+				if(jjj>=IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE)
 				{
 
 				jjj=16;
@@ -305,7 +309,7 @@ buf[7]=0x88;
 			printf("Error occured while writing to buffer: %d\n", ret);
 
 
-	 len_left=len_left-(2*IIO_BUFFER_SIZE-16);
+	 len_left=len_left-(IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
 	}while(len_left>0);
 
 //usleep(300);
@@ -430,9 +434,11 @@ int mm;
 
 			char *gm_p = iio_buffer_start(rxbuf);
 			//u_char *gm_p = iio_buffer_start(rxbuf);
+//printf("iio_buffer_start(rxbuf) %x: iio_buffer_end(rxbuf) %x,iio_buffer_end(rxbuf) %x\n",iio_buffer_start(rxbuf),iio_buffer_end(rxbuf),iio_buffer_step(rxbuf));
+
 			int ii =0;
 			int k=0;
-			for(;k<sample_count*2;k++)
+			for(;k<sample_count*IIO_BUFFER_BUS_WIDTHS;k++)
 			{
 /*
 if(k=0)
@@ -441,17 +447,17 @@ if(k=0)
 				printf("data count %d: value %d\n",mm,*(gm_p+mm));
 }
 */
-//if(k<512)
-//				printf("data count %x: value %x\n",k,*(gm_p));
+if(k<1024)
+				printf("data count %x: value %x\n",k,*(gm_p));
 
-				if(strncmp(gm_p,sync_head,4)==0)
+				if(strncmp(gm_p,sync_head,8)==0)
 				{
 				printf("sync_head found:%d\n",k);
 				break;
 				}
 				gm_p++;
 			}
-			if(k==sample_count*2)
+			if(k==sample_count*IIO_BUFFER_BUS_WIDTHS)
 			{
 			lost_num++;
 			//printf("sync_head lost:%d\n",lost_num);
@@ -483,7 +489,7 @@ if(k=0)
 
 				}
 
-				for(;(ii<sample_count*2-k)&&(ii<this_pk_num+16-k);ii++)
+				for(;(ii<sample_count*IIO_BUFFER_BUS_WIDTHS-k)&&(ii<this_pk_num+16-k);ii++)
 				{
 				//if((ii<6)||(ii>sample_count*2-3))
 				//printf("data count %d: value %d\n",ii,*(gm_p));
@@ -640,7 +646,7 @@ sync_head[7]=0x88;
 	assert(get_ad9361_stream_dev(ctx, RX, &rx) && "No rx dev found");
 
 	printf("* Configuring AD9361 for streaming\n");
-	assert(cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 1) && "RX port 0 not found");
+	assert(cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0) && "RX port 0 not found");
 	assert(cfg_ad9361_streaming_ch(ctx, &txcfg, TX, 0) && "TX port 0 not found");
 
 	printf("* Initializing AD9361 IIO streaming channels\n");
