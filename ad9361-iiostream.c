@@ -28,6 +28,8 @@
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
 #define GHZ(x) ((long long)(x*1000000000.0 + .5))
 
+
+
 /* RX is input, TX is output */
 enum iodev { RX, TX };
 
@@ -212,15 +214,15 @@ int main (int argc, char **argv)
 
 	printf("* Initializing AD9361 IIO streaming channels\n");
 	assert(get_ad9361_stream_ch(ctx, RX, rx, 0, &rx0_i) && "RX chan i not found");
-	assert(get_ad9361_stream_ch(ctx, RX, rx, 1, &rx0_q) && "RX chan q not found");
+//	assert(get_ad9361_stream_ch(ctx, RX, rx, 1, &rx0_q) && "RX chan q not found");
 	assert(get_ad9361_stream_ch(ctx, TX, tx, 0, &tx0_i) && "TX chan i not found");
-	assert(get_ad9361_stream_ch(ctx, TX, tx, 1, &tx0_q) && "TX chan q not found");
+//	assert(get_ad9361_stream_ch(ctx, TX, tx, 1, &tx0_q) && "TX chan q not found");
 
 	printf("* Enabling IIO streaming channels\n");
 	iio_channel_enable(rx0_i);
-	iio_channel_enable(rx0_q);
+//	iio_channel_enable(rx0_q);
 	iio_channel_enable(tx0_i);
-	iio_channel_enable(tx0_q);
+//	iio_channel_enable(tx0_q);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
 	rxbuf = iio_device_create_buffer(rx, 1024*1024, false);
@@ -255,9 +257,9 @@ int main (int argc, char **argv)
 		for (p_dat = iio_buffer_first(rxbuf, rx0_i); p_dat < p_end; p_dat += p_inc) {
 			// Example: swap I and Q
 			const int16_t i = ((int16_t*)p_dat)[0]; // Real (I)
-			const int16_t q = ((int16_t*)p_dat)[1]; // Imag (Q)
-			((int16_t*)p_dat)[0] = q;
-			((int16_t*)p_dat)[1] = i;
+			//const int16_t q = ((int16_t*)p_dat)[1]; // Imag (Q)
+			((int16_t*)p_dat)[0] = i;
+			//((int16_t*)p_dat)[1] = i;
 		}
 
 		// WRITE: Get pointers to TX buf and write IQ to TX buf port 0
@@ -266,7 +268,7 @@ int main (int argc, char **argv)
 		for (p_dat = iio_buffer_first(txbuf, tx0_i); p_dat < p_end; p_dat += p_inc) {
 			// Example: fill with zeros
 			((int16_t*)p_dat)[0] = 0; // Real (I)
-			((int16_t*)p_dat)[1] = 0; // Imag (Q)
+			//((int16_t*)p_dat)[1] = 0; // Imag (Q)
 		}
 
 		// Sample counter increment and status output
