@@ -24,10 +24,32 @@
 #include <stdio.h>
 #include <iio.h>
 
+#include <pcap.h>
+#include <time.h>
+#include <stdlib.h>
+
+#include <string.h>
+#include <stdbool.h>
+#include <malloc.h>
+#include <errno.h>
+#include <math.h>
+#include <ctype.h>
+#include <sys/stat.h>
+#ifdef __linux__
+#include <sys/utsname.h>
+#endif
+#include <matio.h>
+
+
+
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
 #define GHZ(x) ((long long)(x*1000000000.0 + .5))
 
+#define IIO_BUFFER_SIZE 512
+
+  pcap_t * device_eth0; 
+struct iio_buffer *dds_buffer_gm;
 
 
 /* RX is input, TX is output */
@@ -170,6 +192,112 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
 	return true;
 }
 
+
+
+
+
+
+
+
+void getPacket(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * packet)
+{
+  short * id = (short *)arg;
+  
+  printf("id: %d\n", ++(*id));
+u_char *buf;
+
+
+ short len_left = pkthdr->len;
+  unsigned int i=0;
+
+unsigned int jjj=8;
+	
+	do{
+
+		buf = iio_buffer_start(dds_buffer_gm);
+		buf[0]=0xAA;
+		buf[1]=(u_char)(*id);
+		buf[2]=(u_char)((pkthdr->len)&0xff);
+		buf[3]=(u_char)(((pkthdr->len)&0xff00)>>8);
+
+		buf[6]=(u_char)((*id)&0xff);
+		buf[7]=(u_char)(((*id)&0xff00)>>8);
+
+		if(len_left>1024-8)
+		{
+		buf[4]=0xf8;
+		buf[5]=0x03;	
+		}else
+		{
+		buf[4]=(u_char)(len_left&0xff);
+		buf[5]=(u_char)((len_left&0xff00)>>8);		
+		}
+		  for(; i<pkthdr->len; )
+  			{
+				buf[jjj] = packet[i];
+				++i,++jjj;
+				if(jjj>=2*IIO_BUFFER_SIZE)
+				{
+
+				jjj=8;
+				break;
+				}
+			 }
+
+		int ret = iio_buffer_push(dds_buffer_gm);
+		if (ret < 0)
+			printf("Error occured while writing to buffer: %d\n", ret);
+
+
+	 len_left=len_left-(1024-8);
+	}while(len_left>0);
+
+//usleep(300);
+
+
+}
+
+
+static void always_loop(void)
+{
+
+  int id = 0;
+
+  pcap_loop(device_eth0, -1, getPacket, (u_char*)&id);
+}
+
+static void open_eth0(viod)
+{
+
+char errBuf[PCAP_ERRBUF_SIZE], * devStr;
+  
+devStr = "eth0";
+  
+  if(devStr)
+  {
+    printf("success: device: %s\n", devStr);
+  }
+  else
+  {
+    printf("error: %s\n", errBuf);
+    exit(1);
+  }
+  
+  /* open a device, wait until a packet arrives */
+  pcap_t * device = pcap_open_live(devStr, 65535, 1, 0, errBuf);
+  
+  if(!device)
+  {
+    printf("error: pcap_open_live(): %s\n", errBuf);
+    exit(1);
+  }
+
+device_eth0= device;
+
+}
+
+
+
 /* simple configuration and streaming */
 int main (int argc, char **argv)
 {
@@ -225,18 +353,26 @@ int main (int argc, char **argv)
 //	iio_channel_enable(tx0_q);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
-	rxbuf = iio_device_create_buffer(rx, 1024*1024, false);
+	rxbuf = iio_device_create_buffer(rx, IIO_BUFFER_SIZE, false);
 	if (!rxbuf) {
 		perror("Could not create RX buffer");
 		shutdown();
 	}
-	txbuf = iio_device_create_buffer(tx, 1024*1024, false);
+	txbuf = iio_device_create_buffer(tx, IIO_BUFFER_SIZE, false);
 	if (!txbuf) {
 		perror("Could not create TX buffer");
 		shutdown();
 	}
 
+open_eth0();
+
+
+dds_buffer_gm =txbuf;
+
+g_thread_new("pcap loop", (void *) &always_loop, NULL);
+
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
+
 	while (!stop)
 	{
 		ssize_t nbytes_rx, nbytes_tx;

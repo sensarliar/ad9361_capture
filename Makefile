@@ -14,16 +14,21 @@
 # Lesser General Public License for more details.
 
 
+DEPENDENCIES := glib-2.0 gthread-2.0 
+
 TARGETS := ad9361-iiostream
 
 CFLAGS = -Wall
+CFLAGS += `pkg-config --cflags $(DEPENDENCIES)`
+
+LDFLAGS = `pkg-config --libs $(DEPENDENCIES)`
 
 .PHONY: all clean
 
 all: $(TARGETS)
 
 ad9361-iiostream : ad9361-iiostream.o
-	$(CC) -o $@ $^ $(LDFLAGS) -liio
+	$(CC) -o $@ $^ $(LDFLAGS) -liio -lpcap -lpthread
 
 clean:
 	rm -f $(TARGETS) $(TARGETS:%=%.o)
