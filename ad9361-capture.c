@@ -885,6 +885,11 @@ static void usage(char *program)
 	exit(-1);
 }
 
+void my_signal_func(int signum)
+{
+printf("SIGIO EMITS\n");
+}
+
 
 
 /* simple configuration and streaming */
@@ -1031,6 +1036,11 @@ open_eth0();
 
 	uio_addr = mmap(NULL, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, uio_fd, 0);
 
+signal(SIGIO,my_signal_func);
+
+fcntl(uio_fd,F_SETOWN,getpid());
+int Oflags = fcntl(uio_fd,F_GETFL);
+fcntl(uio_fd,F_SETFL,Oflags | FASYNC);
 
 
 dds_buffer_gm =txbuf;
