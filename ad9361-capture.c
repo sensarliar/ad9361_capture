@@ -470,7 +470,7 @@ static void always_loop(void)
 {
 
   int id = 0;
-
+printf("always loop :pid :%d",getpid());
   pcap_loop(device_eth0, -1, getPacket, (u_char*)&id);
 }
 
@@ -569,7 +569,6 @@ static int last_sum_r=0;
 static bool capture_process(void)
 {
 static int lost_num =0;
-
 
 //int mm;
 //	unsigned int i;
@@ -1046,6 +1045,7 @@ open_eth0();
 
 signal(SIGIO,my_signal_func);
 
+printf("init program :pid :%d",getpid());
 fcntl(uio_fd,F_SETOWN,getpid());
 int Oflags = fcntl(uio_fd,F_GETFL);
 fcntl(uio_fd,F_SETFL,Oflags | FASYNC);
