@@ -310,6 +310,7 @@ buf[7]=0x22;
 				++i,++jjj;
 				if(jjj>=IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE)
 				{
+//printf("send big num :%d\n",jjj);
 		int ret = iio_buffer_push(dds_buffer_gm);
 		if (ret < 0)
 			printf("Error occured while writing to buffer: %d\n", ret);
@@ -320,12 +321,15 @@ buf[7]=0x22;
 			 }
 if((jjj>0) &&(jjj<IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE))
 {
+/*
 int tmp_jjj;
 tmp_jjj=jjj/IIO_BUFFER_BUS_WIDTHS;
 if(jjj%IIO_BUFFER_BUS_WIDTHS>0)
 tmp_jjj++;
-iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);			
-//iio_buffer_push(dds_buffer_gm);
+printf("send num :%d\n",jjj);
+*/
+//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);			
+iio_buffer_push(dds_buffer_gm);
 
 }
 
@@ -455,7 +459,7 @@ int mm;
 				}
 				else
 				{
-				printf("iio_buffer_refill time out 1s");
+				//printf("iio_buffer_refill time out 1s\n");
 				return 0;
 				}
 			}
@@ -476,14 +480,14 @@ memcpy(last_pkg_data+8,gm_p,8);
 				pk_total_num= *(gm_p+kkk)+((*(gm_p+kkk+1))<<8);
 				next_ii=kkk+8;
 				pkg_cont_flag=1;
-int mmm=0;
+//int mmm=0;
 //for(;mmm<17;mmm++)
 //printf("both_serch%d,:%x\n",mmm,*(last_pkg_data+mmm));
-printf("%%%%%%%%%%%%%%%%%%%%%%%%%\n");
-mmm=0;
+//printf("%%%%%%%%%%%%%%%%%%%%%%%%%\n");
+//mmm=0;
 //for(;mmm<17;mmm++)
 //printf("gm_p block %d,:%x\n",mmm,*(gm_p+mmm));
-printf("xxxxxxall num:%d\n",pk_total_num);
+//printf("xxxxxxall num:%d\n",pk_total_num);
 				break;
 				}
 			}
@@ -584,7 +588,7 @@ next_ii=0;
 	#endif
 
 
-
+/*
 
 buff_send[0]=0xff;
 buff_send[1]=0xff;
@@ -592,7 +596,7 @@ buff_send[2]=0xff;
 buff_send[3]=0xff;
 buff_send[4]=0xff;
 buff_send[5]=0xff;
-/*
+
 buff_send[6]=0x66;
 buff_send[7]=0x0d;
 buff_send[8]=0x06;
@@ -609,14 +613,14 @@ buff_send[33]=0x4d;
 
 */
 ///dest ip
-if(buff_send[33]==22)
-buff_send[33]=44;
-if(pk_total_num<1512)
+//if(buff_send[33]==22)
+//buff_send[33]=44;
+//if(pk_total_num<1512)
 //printf("all num:%d\n",pk_total_num);
 
-				printf("data ii %d,pk_total_num:%d\n",ii,pk_total_num);
+//				printf("data ii %d,pk_total_num:%d\n",ii,pk_total_num);
 
-if(buff_send[29]!=22)
+//if(buff_send[29]!=22)
 				pcap_inject(device_eth0,buff_send,pk_total_num);
 //int inject_num=pcap_inject(device_eth0,buff_send,pk_total_num);
 				//printf("send out datanum: %d,id:%d\n",inject_num,packet_id);
