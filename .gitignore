@@ -1,5 +1,8 @@
 ad9361-iiostream
+ad9361-capture
 iio-monitor
 !Makefile
 *.o
 *~
+*.txt
+

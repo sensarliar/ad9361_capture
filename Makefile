@@ -16,7 +16,7 @@
 
 DEPENDENCIES := glib-2.0 gthread-2.0 
 
-TARGETS := ad9361-iiostream
+TARGETS := ad9361-capture
 
 CFLAGS = -Wall
 CFLAGS += `pkg-config --cflags $(DEPENDENCIES)`
@@ -27,8 +27,10 @@ LDFLAGS = `pkg-config --libs $(DEPENDENCIES)`
 
 all: $(TARGETS)
 
-ad9361-iiostream : ad9361-iiostream.o
+ad9361-capture : ad9361-capture.o
 	$(CC) -o $@ $^ $(LDFLAGS) -liio -lpcap -lpthread
 
 clean:
 	rm -f $(TARGETS) $(TARGETS:%=%.o)
+install: 
+	cp $(TARGETS) ./../../gao

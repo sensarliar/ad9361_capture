@@ -42,7 +42,7 @@
 
 #include <math.h>
 
-#define CHECKSUM_ENABLE
+//#define CHECKSUM_ENABLE
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
@@ -256,7 +256,7 @@ unsigned int jjj=16;
 	do{
 
 		buf = iio_buffer_start(dds_buffer_gm);
-		buf[0]=0xAA;
+		buf[0]=0x44;
 		//buf[1]=(u_char)(*id);
 buf[1]=0x55;
 buf[2]=0xBB;
@@ -408,6 +408,7 @@ static int lost_num =0;
     int sum_calc,sum_r;
     sum_calc = 0;
     sum_r = 0;
+int mm;
 //	unsigned int i;
 
 			ssize_t ret = iio_buffer_refill(rxbuf);
@@ -433,7 +434,17 @@ static int lost_num =0;
 			int k=0;
 			for(;k<sample_count*2;k++)
 			{
-				if(strncmp(gm_p,sync_head,8)==0)
+/*
+if(k=0)
+{
+				for(mm=0;mm<24;mm++)
+				printf("data count %d: value %d\n",mm,*(gm_p+mm));
+}
+*/
+//if(k<512)
+//				printf("data count %x: value %x\n",k,*(gm_p));
+
+				if(strncmp(gm_p,sync_head,4)==0)
 				{
 				printf("sync_head found:%d\n",k);
 				break;
@@ -443,10 +454,16 @@ static int lost_num =0;
 			if(k==sample_count*2)
 			{
 			lost_num++;
-			printf("sync_head lost:%d\n",lost_num);
+			//printf("sync_head lost:%d\n",lost_num);
+
+//if(lost_num>5)
+//stop = true;
+
 			return 0;
 			}
-				unsigned int pk_total_num= *((short *)gm_p+5);
+
+		
+		unsigned int pk_total_num= *((short *)gm_p+5);
 				int this_pk_num=*((short *)gm_p+6);
 				int packet_id= *((short *)gm_p+7);
 				sum_r = *((short *)gm_p+8);
@@ -495,7 +512,7 @@ static int lost_num =0;
 	return !stop_capture;
 	}
 	#endif
-
+/*
 char exchange[6];
 
 exchange[0]=buff_send[0];
@@ -519,7 +536,7 @@ buff_send[8]=exchange[2];
 buff_send[9]=exchange[3];
 buff_send[10]=exchange[4];
 buff_send[11]=exchange[5];
-
+*/
 /*
 
 buff_send[0]=0xff;
@@ -536,12 +553,13 @@ buff_send[9]=0xc8;
 buff_send[10]=0x0a;
 buff_send[11]=0xe3;
 */
+/*
 char gg;
 gg=buff_send[29];
 buff_send[29]=buff_send[33];
 //buff_send[29]=0x11;
 buff_send[33]=gg;
-
+*/
 
 				//printf("data buf_send_p %d,pk_total_num:%d\n",buf_send_p,pk_total_num);
 				pcap_inject(device_eth0,buff_send,pk_total_num);
@@ -577,12 +595,12 @@ int main (int argc, char **argv)
 {
 
 
-sync_head[0]=0xAA;
+sync_head[0]=0x44;
 sync_head[1]=0x55;
-sync_head[2]=0xBB;
-sync_head[3]=0x66;
-sync_head[4]=0xCC;
-sync_head[5]=0x77;
+sync_head[2]=0x66;
+sync_head[3]=0x77;
+sync_head[4]=0x88;
+sync_head[5]=0x99;
 sync_head[6]=0xDD;
 sync_head[7]=0x88;
 
@@ -665,7 +683,6 @@ g_thread_new("pcap loop", (void *) &always_loop, NULL);
 	//	ssize_t nbytes_rx =0, nbytes_tx =0;
 
 capture_process();
-
 
 		// Sample counter increment and status output
 	//	nrx += nbytes_rx / iio_device_get_sample_size(rx);
