@@ -27,13 +27,17 @@ LDFLAGS = `pkg-config --libs $(DEPENDENCIES)`
 
 all: $(TARGETS)
 
+#gcc -Wall -D_REENTRANT -D_POSIX_TIMERS timer.c -o timer -lrt
+timer.o : timer.c
+	$(CC) timer.c -c $(CFLAGS)  -D_REENTRANT -D_POSIX_TIMERS
+
 rxfifo_reset.o : rxfifo_reset.c
 	$(CC) rxfifo_reset.c -c $(CFLAGS)
 
-ad9361-capture : ad9361-capture.o rxfifo_reset.o
-	$(CC) -o $@ $^ $(LDFLAGS) -liio -lpcap -lpthread
+ad9361-capture : ad9361-capture.o rxfifo_reset.o timer.o
+	$(CC) -o $@ $^ $(LDFLAGS) -liio -lpcap -lpthread -lrt 
 
 clean:
-	rm -f $(TARGETS) $(TARGETS:%=%.o) rxfifo_reset.o
+	rm -f $(TARGETS) $(TARGETS:%=%.o) rxfifo_reset.o timer.o
 install: 
 	cp $(TARGETS) ./../../gao

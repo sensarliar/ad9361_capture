@@ -16,6 +16,11 @@
  *
  **/
 
+
+   #include <pthread.h>
+#include "timer.h"
+
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -50,13 +55,14 @@
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
 #define GHZ(x) ((long long)(x*1000000000.0 + .5))
 
-#define IIO_BUFFER_SIZE 64
+#define IIO_BUFFER_SIZE 16
 #define IIO_BUFFER_BUS_WIDTHS 8
 
   pcap_t * device_eth0; 
 pcap_t * device_eth1;
 struct iio_buffer *dds_buffer_gm;
 
+   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* RX is input, TX is output */
 enum iodev { RX, TX };
@@ -117,7 +123,7 @@ do_checksum_math(uint16_t *data, int len)
 /* cleanup and exit */
 static void shutdown()
 {
-
+timer_stop();
  if (device_eth0){pcap_close(device_eth0);}
 // if (device_eth1){pcap_close(device_eth1);}
 	printf("* Destroying buffers\n");
@@ -324,9 +330,20 @@ buf[7]=0x22;
 				if(jjj>=IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE)
 				{
 //printf("send big num :%d\n",jjj);
-		int ret = iio_buffer_push(dds_buffer_gm);
+int ret =0;
+     if(pthread_mutex_lock(&mutex)!=0)
+     {                     
+      perror("pthread_mutex_lock");                          
+     }                                                      
+     else   
+		ret = iio_buffer_push(dds_buffer_gm);
 		if (ret < 0)
 			printf("Error occured while writing to buffer: %d\n", ret);
+     if(pthread_mutex_unlock(&mutex)!=0){                   
+     perror("pthread_mutex_unlock");                        
+     }    
+timer_set();
+
 				jjj=0;
 				//break;
 		buf = iio_buffer_start(dds_buffer_gm);
@@ -334,16 +351,25 @@ buf[7]=0x22;
 			 }
 if((jjj>0) &&(jjj<IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE))
 {
-/*
+
 int tmp_jjj;
 tmp_jjj=jjj/IIO_BUFFER_BUS_WIDTHS;
 if(jjj%IIO_BUFFER_BUS_WIDTHS>0)
 tmp_jjj++;
-printf("send num :%d\n",jjj);
-*/
-//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);			
-iio_buffer_push(dds_buffer_gm);
+//printf("send num :%d\n",jjj);
 
+//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);			
+     if(pthread_mutex_lock(&mutex)!=0)
+     {                     
+      perror("pthread_mutex_lock");                          
+     }                                                      
+     else  
+iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
+//iio_buffer_push(dds_buffer_gm);
+     if(pthread_mutex_unlock(&mutex)!=0){                   
+     perror("pthread_mutex_unlock");                        
+     }    
+timer_set();
 }
 
 
@@ -353,6 +379,36 @@ iio_buffer_push(dds_buffer_gm);
 
 //usleep(300);
 
+
+}
+
+void tx_dirty_data(union sigval sigval)
+{
+int ret;
+ret=pthread_mutex_trylock(&mutex);                     
+     if(ret==EBUSY)
+{                                         
+     //printf("pthread2:the variable is locked by pthread1\n");
+}
+     else
+     {  
+      if(ret!=0)
+      {                                                                                      
+        perror("pthread_mutex_trylock");                 
+        exit(1);                                         
+       }                                                
+       else
+            iio_buffer_push(dds_buffer_gm);                                 
+       //printf("pthread2:pthread2 got lock.The variable is%d\n",lock_var);                                 
+               /*互斥锁接锁*/                                   
+       if(pthread_mutex_unlock(&mutex)!=0)
+       {             
+        perror("pthread_mutex_unlock");                  
+       }                                                
+       //else                                             
+       //printf("pthread2:pthread2 unlock the variable\n");
+     }
+timer_set();
 
 }
 
@@ -694,17 +750,29 @@ int main (int argc, char **argv)
 {
 int rx_freq=2400;
 int tx_freq=2400;
+int bandwidth=18;
+int gain=0;
 	int c;
 //	opterr = 0;
-	while ((c = getopt (argc, argv, "r:t:?")) != -1)
+	while ((c = getopt (argc, argv, "r:t:b:g:?")) != -1)
 		switch (c) {
 			case 'r':
 rx_freq =atoi(optarg);
-printf("freq rx:%d\n",rx_freq);
+printf("freq rx:%d MHz\n",rx_freq);
 				break;
 			case 't':
 tx_freq =atoi(optarg);
-printf("freq tx:%d\n",tx_freq);
+printf("freq tx:%d MHz\n",tx_freq);
+				break;
+
+			case 'b':
+bandwidth =atoi(optarg);
+printf("bandwidth:%d MHz\n",bandwidth);
+				break;
+
+			case 'g':
+gain =atoi(optarg);
+printf("gain:%d\n",gain);
 				break;
 
 			case '?':
@@ -741,18 +809,21 @@ sync_head[7]=0x22;
 	signal(SIGINT, handle_sig);
 
 	// RX stream config
-	rxcfg.bw_hz = MHZ(18);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(30.72);   // 2.5 MS/s rx sample rate
+//	rxcfg.bw_hz = MHZ(32);   // 2 MHz rf bandwidth
+rxcfg.bw_hz = MHZ(bandwidth); 
+	rxcfg.fs_hz = MHZ(61.44);   // 2.5 MS/s rx sample rate
 	rxcfg.lo_hz = MHZ(rx_freq);// 2.4 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
 rxcfg.gain_control_mode = "fast_attack";
 
 	// TX stream config
-	txcfg.bw_hz = MHZ(18); // 1.5 MHz rf bandwidth
-	txcfg.fs_hz = MHZ(30.72);   // 2.5 MS/s tx sample rate
+//	txcfg.bw_hz = MHZ(32); // 1.5 MHz rf bandwidth
+txcfg.bw_hz = MHZ(bandwidth); 
+	txcfg.fs_hz = MHZ(61.44);   // 2.5 MS/s tx sample rate
 	txcfg.lo_hz = MHZ(tx_freq); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 txcfg.hardwaregain = 0;
+//txcfg.hardwaregain = gain;
 
 	printf("* Acquiring IIO context\n");
 	assert((ctx = iio_create_default_context()) && "No context");
@@ -795,6 +866,11 @@ reset_qpsk_rx();
 usleep(1000);
 unreset_qpsk_rx();
 
+
+   /*互斥锁初始化*/
+     pthread_mutex_init(&mutex,NULL);
+
+
 printf("iio_device_get_sample_size  %d\n",iio_device_get_sample_size(tx));
 open_eth0();
 //open_eth1();
@@ -806,6 +882,7 @@ dds_buffer_gm =txbuf;
 g_thread_new("pcap loop", (void *) &always_loop, NULL);
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
+timer_start();
 
 	while (!stop)
 	{
