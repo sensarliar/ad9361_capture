@@ -23,7 +23,7 @@ int uio_wr(const char *dev, unsigned int reg_addr, unsigned int reg_val)
 
 	return 0;
 }
-/*
+
 int uio_rd(const char *dev, unsigned int reg_addr, unsigned int* reg_val)
 {
 	int uio_fd;
@@ -46,7 +46,7 @@ int uio_rd(const char *dev, unsigned int reg_addr, unsigned int* reg_val)
 
 	return 0;
 }
-*/
+
 int gm_rd(const char *dev,  unsigned int* reg_val)
 {
 	//int uio_fd;
@@ -77,6 +77,15 @@ void unreset_qpsk_rx(void)
 
 	uio_wr("/dev/mwipcore", 0x00, 0x00);
 }
+
+unsigned int rd_fpag_version(void)
+{
+	unsigned int fpga_ver=0;
+	uio_rd("/dev/version", 0x00, &fpga_ver);
+	return fpga_ver;
+
+}
+
 /*
 unsigned int rd_txfifo_hf_flag(void)
 {

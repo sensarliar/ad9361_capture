@@ -27,4 +27,5 @@ void unreset_qpsk_rx(void);
 
 
 //unsigned int rd_txfifo_hf_flag(void);
+unsigned int rd_fpag_version(void);
 

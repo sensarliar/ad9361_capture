@@ -1004,11 +1004,13 @@ txcfg.hardwaregain = gain;
 		perror("Could not create TX buffer");
 		shutdown();
 	}
-
+/*
 reset_qpsk_rx();
 usleep(1000);
 unreset_qpsk_rx();
-
+*/
+unsigned int fpga_version = rd_fpag_version();
+printf("fpga version %x\n",fpga_version);
 
    /*互斥锁初始化*/
      pthread_mutex_init(&mutex,NULL);
