@@ -83,6 +83,9 @@ static bool stop;
 /* cleanup and exit */
 static void shutdown()
 {
+
+ if (device_eth0){pcap_close(device_eth0);}
+ if (device_eth1){pcap_close(device_eth1);}
 	printf("* Destroying buffers\n");
 	if (rxbuf) { iio_buffer_destroy(rxbuf); }
 	if (txbuf) { iio_buffer_destroy(txbuf); }
@@ -255,7 +258,7 @@ unsigned int jjj=8;
 	 len_left=len_left-(1024-8);
 	}while(len_left>0);
 
-//usleep(300);
+usleep(300);
 
 
 }
@@ -337,7 +340,7 @@ device_eth1= device;
 
 
 
-gint capture_function = 0;
+int capture_function = 0;
 
 bool stop_capture =0;
 //static bool completed =0;
@@ -347,34 +350,27 @@ static unsigned int buf_send_p=0;
 
 
 
-static gboolean capture_process(void)
+static bool capture_process(void)
 {
 static int lost_num =0;
 	unsigned int i;
 
-	if (stop_capture == 1)
-		goto capture_stop_check;
-
-		
-
-
 			ssize_t ret = iio_buffer_refill(rxbuf);
 
-//printf("o_buffer_refil ret:%d: sample_count:%d,nb_channels:%d\n",(int)ret,(int)sample_count,nb_channels);
 			if (ret < 0) {
 if(ret!=-110)
 {
 				fprintf(stderr, "Error while reading data: %s\n", strerror(-ret));
 				//stop_sampling();
-				goto capture_stop_check;
+
 }
 else
 {
 printf("iio_buffer_refill time out 1s");
-goto capture_stop_check;
+return 0;
 }
 			}
-
+int sample_count=512;
 
 	u_char *gm_p = iio_buffer_start(rxbuf);
 				int ii =0;
@@ -421,8 +417,9 @@ goto capture_stop_check;
 
 				if(buf_send_p==pk_total_num)
 				{
-				int ret=pcap_inject(device_eth1,buff_send,pk_total_num);
-				printf("send out datanum: %d,id:%d\n",ret,packet_id);
+				//printf("data buf_send_p %d,pk_total_num:%d\n",buf_send_p,pk_total_num);
+				int inject_num=pcap_inject(device_eth1,buff_send,pk_total_num);
+				printf("send out datanum: %d,id:%d\n",inject_num,packet_id);
 				buf_send_p=0;
 				}
 				else if(buf_send_p>pk_total_num)
@@ -438,9 +435,6 @@ goto capture_stop_check;
 
 
 
-capture_stop_check:
-	if (stop_capture == 1)
-		capture_function = 0;
 
 	return !stop_capture;
 }
@@ -529,15 +523,15 @@ g_thread_new("pcap loop", (void *) &always_loop, NULL);
 
 	while (!stop)
 	{
-		ssize_t nbytes_rx =0, nbytes_tx =0;
+	//	ssize_t nbytes_rx =0, nbytes_tx =0;
 
 capture_process();
 
 
 		// Sample counter increment and status output
-		nrx += nbytes_rx / iio_device_get_sample_size(rx);
-		ntx += nbytes_tx / iio_device_get_sample_size(tx);
-		printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx/1e6, ntx/1e6);
+	//	nrx += nbytes_rx / iio_device_get_sample_size(rx);
+	//	ntx += nbytes_tx / iio_device_get_sample_size(tx);
+	//	printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx/1e6, ntx/1e6);
 	}
 
 	shutdown();
