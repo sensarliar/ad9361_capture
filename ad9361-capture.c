@@ -385,7 +385,7 @@ while(rd_txfifo_hf_flag())
 {
 flag_num++;
 //printf("tx fifo half full flag was set %d.\n",flag_num);
-	usleep(3);
+	usleep(10);
 }
 
 
@@ -418,7 +418,7 @@ while(rd_txfifo_hf_flag())
 {
 flag_num++;
 //printf("tx fifo half full flag was set %d.\n",flag_num);
-	usleep(3);
+	usleep(10);
 }
 
 		iio_buffer_push(dds_buffer_gm);
