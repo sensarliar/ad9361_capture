@@ -250,7 +250,7 @@ if(type == TX)
 
 
 
-
+int flag_num = 0;
 
 void getPacket(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * packet)
 {
@@ -342,10 +342,14 @@ unsigned int jjj=16;
 						{
 		//printf("send big num :%d\n",jjj);
 		int ret =0;
+
 while(rd_txfifo_hf_flag())
 {
-	usleep(2);
+flag_num++;
+printf("tx fifo half full flag was set %d.\n",flag_num);
+	usleep(10);
 }
+
 
 				ret = iio_buffer_push(dds_buffer_gm);
 				if (ret < 0)
@@ -371,10 +375,14 @@ while(rd_txfifo_hf_flag())
 		{
 		memset((u_char *)(iio_buffer_start(dds_buffer_gm))+jjj,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-jjj);
 		//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
+
 while(rd_txfifo_hf_flag())
 {
-	usleep(2);
+flag_num++;
+printf("tx fifo half full flag was set %d.\n",flag_num);
+	usleep(10);
 }
+
 		iio_buffer_push(dds_buffer_gm);
 		}
 

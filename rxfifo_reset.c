@@ -36,7 +36,7 @@ int uio_wr(const char *dev, unsigned int reg_addr, unsigned int reg_val)
 
 	return 0;
 }
-
+/*
 int uio_rd(const char *dev, unsigned int reg_addr, unsigned int* reg_val)
 {
 	int uio_fd;
@@ -59,7 +59,23 @@ int uio_rd(const char *dev, unsigned int reg_addr, unsigned int* reg_val)
 
 	return 0;
 }
+*/
+int gm_rd(const char *dev,  unsigned int* reg_val)
+{
+	//int uio_fd;
+FILE* uio_fd;
+	//void *uio_addr;
 
+//	uio_fd = fopen(dev, O_RDWR);
+
+uio_fd = fopen(dev, "rb");
+
+fread(reg_val,1,1,uio_fd);
+	fclose(uio_fd);
+
+//*reg_val=0;
+	return 0;
+}
 
 
 void reset_qpsk_rx(void)
@@ -79,6 +95,7 @@ unsigned int rd_txfifo_hf_flag(void)
 {
 	unsigned int hf_flag=0;
 	uio_rd("/dev/mwipcore2", 0x00, &hf_flag);
+//gm_rd("/dev/mwipcore2", &hf_flag);
 	hf_flag = hf_flag&0x00000001;
 	return hf_flag;
 
