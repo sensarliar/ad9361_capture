@@ -49,7 +49,7 @@
 #include <unistd.h>
 #include "rxfifo_reset.h"
 
-#define CHECKSUM_ENABLE
+//#define CHECKSUM_ENABLE
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
@@ -1004,11 +1004,11 @@ txcfg.hardwaregain = gain;
 		perror("Could not create TX buffer");
 		shutdown();
 	}
-/*
+
 reset_qpsk_rx();
 usleep(1000);
 unreset_qpsk_rx();
-*/
+
 unsigned int fpga_version = rd_fpag_version();
 printf("fpga version %x\n",fpga_version);
 
