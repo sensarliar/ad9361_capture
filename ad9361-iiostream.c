@@ -85,7 +85,7 @@ static void shutdown()
 {
 
  if (device_eth0){pcap_close(device_eth0);}
- if (device_eth1){pcap_close(device_eth1);}
+// if (device_eth1){pcap_close(device_eth1);}
 	printf("* Destroying buffers\n");
 	if (rxbuf) { iio_buffer_destroy(rxbuf); }
 	if (txbuf) { iio_buffer_destroy(txbuf); }
@@ -532,7 +532,7 @@ int main (int argc, char **argv)
 	assert(get_ad9361_stream_dev(ctx, RX, &rx) && "No rx dev found");
 
 	printf("* Configuring AD9361 for streaming\n");
-	assert(cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0) && "RX port 0 not found");
+	assert(cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 1) && "RX port 0 not found");
 	assert(cfg_ad9361_streaming_ch(ctx, &txcfg, TX, 0) && "TX port 0 not found");
 
 	printf("* Initializing AD9361 IIO streaming channels\n");
@@ -561,7 +561,7 @@ int main (int argc, char **argv)
 	}
 
 open_eth0();
-open_eth1();
+//open_eth1();
 
 
 dds_buffer_gm =txbuf;
