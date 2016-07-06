@@ -216,27 +216,36 @@ u_char *buf;
  short len_left = pkthdr->len;
   unsigned int i=0;
 
-unsigned int jjj=8;
+unsigned int jjj=14;
 	
 	do{
 
 		buf = iio_buffer_start(dds_buffer_gm);
 		buf[0]=0xAA;
-		buf[1]=(u_char)(*id);
-		buf[2]=(u_char)((pkthdr->len)&0xff);
-		buf[3]=(u_char)(((pkthdr->len)&0xff00)>>8);
+		//buf[1]=(u_char)(*id);
+buf[1]=0x55;
+buf[2]=0xBB;
+buf[3]=0x66;
+buf[4]=0xCC;
+buf[5]=0x77;
+buf[6]=0xDD;
+buf[7]=0x88;
+		buf[8]=(u_char)((pkthdr->len)&0xff);
+		buf[9]=(u_char)(((pkthdr->len)&0xff00)>>8);
 
-		buf[6]=(u_char)((*id)&0xff);
-		buf[7]=(u_char)(((*id)&0xff00)>>8);
+		buf[12]=(u_char)((*id)&0xff);
+		buf[13]=(u_char)(((*id)&0xff00)>>8);
 
-		if(len_left>1024-8)
+		if(len_left>2*IIO_BUFFER_SIZE-14)
 		{
-		buf[4]=0xf8;
-		buf[5]=0x03;	
+		//buf[4]=0xf8;
+		//buf[5]=0x03;	
+		buf[10]=(u_char)((2*IIO_BUFFER_SIZE-8)&0xff);
+		buf[11]=(u_char)(((2*IIO_BUFFER_SIZE-8)&0xff00)>>8);	
 		}else
 		{
-		buf[4]=(u_char)(len_left&0xff);
-		buf[5]=(u_char)((len_left&0xff00)>>8);		
+		buf[10]=(u_char)(len_left&0xff);
+		buf[11]=(u_char)((len_left&0xff00)>>8);		
 		}
 		  for(; i<pkthdr->len; )
   			{
@@ -245,7 +254,7 @@ unsigned int jjj=8;
 				if(jjj>=2*IIO_BUFFER_SIZE)
 				{
 
-				jjj=8;
+				jjj=14;
 				break;
 				}
 			 }
@@ -255,7 +264,7 @@ unsigned int jjj=8;
 			printf("Error occured while writing to buffer: %d\n", ret);
 
 
-	 len_left=len_left-(1024-8);
+	 len_left=len_left-(2*IIO_BUFFER_SIZE-14);
 	}while(len_left>0);
 
 //usleep(300);
@@ -370,7 +379,7 @@ printf("iio_buffer_refill time out 1s");
 return 0;
 }
 			}
-int sample_count=512;
+int sample_count=IIO_BUFFER_SIZE;
 
 	u_char *gm_p = iio_buffer_start(rxbuf);
 				int ii =0;
