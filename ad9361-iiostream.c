@@ -42,7 +42,7 @@
 
 #include <math.h>
 
-
+#define CHECKSUM_ENABLE
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
@@ -79,7 +79,36 @@ static struct iio_buffer  *rxbuf = NULL;
 static struct iio_buffer  *txbuf = NULL;
 
 static bool stop;
+#ifdef CHECKSUM_ENABLE
+#define CHECKSUM_CARRY(x) \
+    (x = (x >> 16) + (x & 0xffff), (~(x + (x >> 16)) & 0xffff))
 
+/**
+ * code to do a ones-compliment checksum
+ */
+static int
+do_checksum_math(uint16_t *data, int len)
+{
+    int sum = 0;
+    union {
+        uint16_t s;
+        uint8_t b[2];
+    } pad;
+
+    while (len > 1) {
+        sum += *data++;
+        len -= 2;
+    }
+
+    if (len == 1) {
+        pad.b[0] = *(uint8_t *)data;
+        pad.b[1] = 0;
+        sum += pad.s;
+    }
+
+    return (sum);
+}
+#endif
 /* cleanup and exit */
 static void shutdown()
 {
@@ -211,12 +240,18 @@ void getPacket(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * p
   
 //  printf("id: %d\n", ++(*id));
 u_char *buf;
-
+    int sum;
+    sum = 0;
 
  short len_left = pkthdr->len;
   unsigned int i=0;
 
-unsigned int jjj=14;
+unsigned int jjj=16;
+
+	#ifdef CHECKSUM_ENABLE	
+            sum = do_checksum_math((uint16_t *)packet, pkthdr->len);
+            sum = CHECKSUM_CARRY(sum);	
+	#endif
 	
 	do{
 
@@ -236,17 +271,23 @@ buf[7]=0x88;
 		buf[12]=(u_char)((*id)&0xff);
 		buf[13]=(u_char)(((*id)&0xff00)>>8);
 
-		if(len_left>2*IIO_BUFFER_SIZE-14)
+		if(len_left>2*IIO_BUFFER_SIZE-16)
 		{
 		//buf[4]=0xf8;
 		//buf[5]=0x03;	
-		buf[10]=(u_char)((2*IIO_BUFFER_SIZE-8)&0xff);
-		buf[11]=(u_char)(((2*IIO_BUFFER_SIZE-8)&0xff00)>>8);	
+		buf[10]=(u_char)((2*IIO_BUFFER_SIZE-16)&0xff);
+		buf[11]=(u_char)(((2*IIO_BUFFER_SIZE-16)&0xff00)>>8);	
 		}else
 		{
 		buf[10]=(u_char)(len_left&0xff);
 		buf[11]=(u_char)((len_left&0xff00)>>8);		
 		}
+	#ifdef CHECKSUM_ENABLE	
+            //sum = do_checksum_math((uint16_t *)(&buf[16]), 2*IIO_BUFFER_SIZE-16);
+            //sum = CHECKSUM_CARRY(sum);
+		buf[14]=(u_char)(sum&0xff);
+		buf[15]=(u_char)((sum&0xff00)>>8);	
+	#endif
 		  for(; i<pkthdr->len; )
   			{
 				buf[jjj] = packet[i];
@@ -254,7 +295,7 @@ buf[7]=0x88;
 				if(jjj>=2*IIO_BUFFER_SIZE)
 				{
 
-				jjj=14;
+				jjj=16;
 				break;
 				}
 			 }
@@ -264,7 +305,7 @@ buf[7]=0x88;
 			printf("Error occured while writing to buffer: %d\n", ret);
 
 
-	 len_left=len_left-(2*IIO_BUFFER_SIZE-14);
+	 len_left=len_left-(2*IIO_BUFFER_SIZE-16);
 	}while(len_left>0);
 
 //usleep(300);
@@ -363,6 +404,10 @@ static char sync_head[8];
 static bool capture_process(void)
 {
 static int lost_num =0;
+
+    int sum_calc,sum_r;
+    sum_calc = 0;
+    sum_r = 0;
 //	unsigned int i;
 
 			ssize_t ret = iio_buffer_refill(rxbuf);
@@ -404,6 +449,7 @@ static int lost_num =0;
 				unsigned int pk_total_num= *((short *)gm_p+5);
 				int this_pk_num=*((short *)gm_p+6);
 				int packet_id= *((short *)gm_p+7);
+				sum_r = *((short *)gm_p+8);
 
 				//printf("all num:%d\n",pk_total_num);
 				//printf("this packet:%d\n",this_pk_num);
@@ -420,12 +466,12 @@ static int lost_num =0;
 
 				}
 
-				for(;(ii<sample_count*2-k)&&(ii<this_pk_num+14-k);ii++)
+				for(;(ii<sample_count*2-k)&&(ii<this_pk_num+16-k);ii++)
 				{
 				//if((ii<6)||(ii>sample_count*2-3))
 				//printf("data count %d: value %d\n",ii,*(gm_p));
 		
-					if(ii>13)
+					if(ii>15)
 					{
 					buff_send[buf_send_p]=*(gm_p);
 					buf_send_p++;
@@ -438,6 +484,17 @@ static int lost_num =0;
 
 				if(buf_send_p==pk_total_num)
 				{
+
+	#ifdef CHECKSUM_ENABLE	
+            sum_calc = do_checksum_math((uint16_t *)buff_send, pk_total_num);
+            sum_calc = CHECKSUM_CARRY(sum_calc);	
+	if(sum_r == sum_calc)
+	{
+	printf("checksum crc received wrong\n");
+	buf_send_p=0;
+	return !stop_capture;
+	}
+	#endif
 
 char exchange[6];
 
