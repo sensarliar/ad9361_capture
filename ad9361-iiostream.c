@@ -512,15 +512,15 @@ int main (int argc, char **argv)
 	signal(SIGINT, handle_sig);
 
 	// RX stream config
-	rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
-	rxcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
+	rxcfg.bw_hz = MHZ(18);   // 2 MHz rf bandwidth
+	rxcfg.fs_hz = MHZ(30.72);   // 2.5 MS/s rx sample rate
+	rxcfg.lo_hz = GHZ(2.4);// 2.5 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
 
 	// TX stream config
-	txcfg.bw_hz = MHZ(1.5); // 1.5 MHz rf bandwidth
-	txcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s tx sample rate
-	txcfg.lo_hz = GHZ(2.5); // 2.5 GHz rf frequency
+	txcfg.bw_hz = MHZ(18); // 1.5 MHz rf bandwidth
+	txcfg.fs_hz = MHZ(30.72);   // 2.5 MS/s tx sample rate
+	txcfg.lo_hz = GHZ(2.4); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
@@ -537,15 +537,15 @@ int main (int argc, char **argv)
 
 	printf("* Initializing AD9361 IIO streaming channels\n");
 	assert(get_ad9361_stream_ch(ctx, RX, rx, 0, &rx0_i) && "RX chan i not found");
-//	assert(get_ad9361_stream_ch(ctx, RX, rx, 1, &rx0_q) && "RX chan q not found");
+	assert(get_ad9361_stream_ch(ctx, RX, rx, 1, &rx0_q) && "RX chan q not found");
 	assert(get_ad9361_stream_ch(ctx, TX, tx, 0, &tx0_i) && "TX chan i not found");
-//	assert(get_ad9361_stream_ch(ctx, TX, tx, 1, &tx0_q) && "TX chan q not found");
+	assert(get_ad9361_stream_ch(ctx, TX, tx, 1, &tx0_q) && "TX chan q not found");
 
 	printf("* Enabling IIO streaming channels\n");
 	iio_channel_enable(rx0_i);
-//	iio_channel_enable(rx0_q);
+	iio_channel_enable(rx0_q);
 	iio_channel_enable(tx0_i);
-//	iio_channel_enable(tx0_q);
+	iio_channel_enable(tx0_q);
 
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
 		iio_device_set_kernel_buffers_count(rx,128);
