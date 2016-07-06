@@ -312,7 +312,7 @@ device_eth0= device;
 }
 
 
-
+/*
 static void open_eth1(viod)
 {
 
@@ -330,7 +330,7 @@ devStr = "eth1";
     exit(1);
   }
   
-  /* open a device, wait until a packet arrives */
+
   pcap_t * device = pcap_open_live(devStr, 65535, 1, 0, errBuf);
   
   if(!device)
@@ -342,6 +342,7 @@ devStr = "eth1";
 device_eth1= device;
 
 }
+*/
 
 
 
@@ -356,7 +357,7 @@ bool stop_capture =0;
 static int last_pk_id=0;
 static u_char buff_send[65535];
 static unsigned int buf_send_p=0;
-
+static char sync_head[8];
 
 
 static bool capture_process(void)
@@ -367,31 +368,42 @@ static int lost_num =0;
 			ssize_t ret = iio_buffer_refill(rxbuf);
 
 			if (ret < 0) {
-if(ret!=-110)
-{
-				fprintf(stderr, "Error while reading data: %s\n", strerror(-ret));
-				//stop_sampling();
-
-}
-else
-{
-printf("iio_buffer_refill time out 1s");
-return 0;
-}
-			}
-int sample_count=IIO_BUFFER_SIZE;
-
-	u_char *gm_p = iio_buffer_start(rxbuf);
-				int ii =0;
-				if(0xaa!=*gm_p)
+				if(ret!=-110)
 				{
-				lost_num++;
-				printf("lost:%d\n",lost_num);
+								fprintf(stderr, "Error while reading data: %s\n", strerror(-ret));
+								//stop_sampling();
+
+				}
+				else
+				{
+				printf("iio_buffer_refill time out 1s");
 				return 0;
 				}
-				unsigned int pk_total_num= *((short *)gm_p+1);
-				int this_pk_num=*((short *)gm_p+2);
-				int packet_id= *((short *)gm_p+3);
+			}
+			int sample_count=IIO_BUFFER_SIZE;
+
+			char *gm_p = iio_buffer_start(rxbuf);
+			//u_char *gm_p = iio_buffer_start(rxbuf);
+			int ii =0;
+			int k=0;
+			for(;k<sample_count*2;k++)
+			{
+				if(strncmp(gm_p,sync_head,8)==0)
+				{
+				printf("sync_head found:%d\n",k);
+				break;
+				}
+				gm_p++;
+			}
+			if(k==sample_count*2)
+			{
+			lost_num++;
+			printf("sync_head lost:%d\n",lost_num);
+			return 0;
+			}
+				unsigned int pk_total_num= *((short *)gm_p+5);
+				int this_pk_num=*((short *)gm_p+6);
+				int packet_id= *((short *)gm_p+7);
 
 				//printf("all num:%d\n",pk_total_num);
 				//printf("this packet:%d\n",this_pk_num);
@@ -408,12 +420,12 @@ int sample_count=IIO_BUFFER_SIZE;
 
 				}
 
-				for(;(ii<sample_count*2)&&(ii<this_pk_num+8);ii++)
+				for(;(ii<sample_count*2-k)&&(ii<this_pk_num+14-k);ii++)
 				{
 				//if((ii<6)||(ii>sample_count*2-3))
 				//printf("data count %d: value %d\n",ii,*(gm_p));
 		
-					if(ii>7)
+					if(ii>13)
 					{
 					buff_send[buf_send_p]=*(gm_p);
 					buf_send_p++;
@@ -475,7 +487,8 @@ buff_send[33]=gg;
 
 
 				//printf("data buf_send_p %d,pk_total_num:%d\n",buf_send_p,pk_total_num);
-				int inject_num=pcap_inject(device_eth0,buff_send,pk_total_num);
+				pcap_inject(device_eth0,buff_send,pk_total_num);
+//int inject_num=pcap_inject(device_eth0,buff_send,pk_total_num);
 				//printf("send out datanum: %d,id:%d\n",inject_num,packet_id);
 				buf_send_p=0;
 				}
@@ -505,6 +518,17 @@ buff_send[33]=gg;
 /* simple configuration and streaming */
 int main (int argc, char **argv)
 {
+
+
+sync_head[0]=0xAA;
+sync_head[1]=0x55;
+sync_head[2]=0xBB;
+sync_head[3]=0x66;
+sync_head[4]=0xCC;
+sync_head[5]=0x77;
+sync_head[6]=0xDD;
+sync_head[7]=0x88;
+
 	// Streaming devices
 	struct iio_device *tx;
 	struct iio_device *rx;
