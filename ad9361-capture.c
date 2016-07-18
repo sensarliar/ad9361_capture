@@ -447,15 +447,17 @@ if(k=0)
 				printf("data count %d: value %d\n",mm,*(gm_p+mm));
 }
 */
-if(k<1024)
-				printf("data count %x: value %x\n",k,*(gm_p));
+//(i/8)*8+(7-i%8);
+
+//if(k<sample_count*IIO_BUFFER_BUS_WIDTHS)
+//				printf("data count %x: value %x\n",k,*(gm_p+(k/8)*8+(7-k%8)));
 
 				if(strncmp(gm_p,sync_head,8)==0)
 				{
 				printf("sync_head found:%d\n",k);
 				break;
 				}
-				gm_p++;
+				//gm_p++;
 			}
 			if(k==sample_count*IIO_BUFFER_BUS_WIDTHS)
 			{
@@ -468,7 +470,7 @@ if(k<1024)
 			return 0;
 			}
 
-		
+/*		
 		unsigned int pk_total_num= *((short *)gm_p+5);
 				int this_pk_num=*((short *)gm_p+6);
 				int packet_id= *((short *)gm_p+7);
@@ -518,54 +520,7 @@ if(k<1024)
 	return !stop_capture;
 	}
 	#endif
-/*
-char exchange[6];
 
-exchange[0]=buff_send[0];
-exchange[1]=buff_send[1];
-exchange[2]=buff_send[2];
-exchange[3]=buff_send[3];
-exchange[4]=buff_send[4];
-exchange[5]=buff_send[5];
-
-
-buff_send[0]=buff_send[6];
-buff_send[1]=buff_send[7];
-buff_send[2]=buff_send[8];
-buff_send[3]=buff_send[9];
-buff_send[4]=buff_send[10];
-buff_send[5]=buff_send[11];
-
-buff_send[6]=exchange[0];
-buff_send[7]=exchange[1];
-buff_send[8]=exchange[2];
-buff_send[9]=exchange[3];
-buff_send[10]=exchange[4];
-buff_send[11]=exchange[5];
-*/
-/*
-
-buff_send[0]=0xff;
-buff_send[1]=0xff;
-buff_send[2]=0xff;
-buff_send[3]=0xff;
-buff_send[4]=0xff;
-buff_send[5]=0xff;
-
-buff_send[6]=0x66;
-buff_send[7]=0x0d;
-buff_send[8]=0x06;
-buff_send[9]=0xc8;
-buff_send[10]=0x0a;
-buff_send[11]=0xe3;
-*/
-/*
-char gg;
-gg=buff_send[29];
-buff_send[29]=buff_send[33];
-//buff_send[29]=0x11;
-buff_send[33]=gg;
-*/
 
 				//printf("data buf_send_p %d,pk_total_num:%d\n",buf_send_p,pk_total_num);
 				pcap_inject(device_eth0,buff_send,pk_total_num);
@@ -585,7 +540,7 @@ buff_send[33]=gg;
 
 
 
-
+*/
 
 	return !stop_capture;
 }
@@ -601,14 +556,14 @@ int main (int argc, char **argv)
 {
 
 
-sync_head[0]=0x44;
-sync_head[1]=0x55;
-sync_head[2]=0x66;
-sync_head[3]=0x77;
-sync_head[4]=0x88;
-sync_head[5]=0x99;
-sync_head[6]=0xDD;
-sync_head[7]=0x88;
+sync_head[0]=0x99;
+sync_head[1]=0x88;
+sync_head[2]=0x77;
+sync_head[3]=0x66;
+sync_head[4]=0x55;
+sync_head[5]=0x44;
+sync_head[6]=0x33;
+sync_head[7]=0x22;
 
 	// Streaming devices
 	struct iio_device *tx;
