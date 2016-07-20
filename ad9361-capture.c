@@ -472,7 +472,7 @@ if(!pkg_cont_flag)
 
 				if(strncmp(gm_p,sync_head,8)==0)
 				{
-				printf("sync_head found:%d\n",k);
+				//printf("sync_head found:%d\n",k);
 				break;
 				}
 				gm_p++;
@@ -480,11 +480,11 @@ if(!pkg_cont_flag)
 			if(k==sample_count*IIO_BUFFER_BUS_WIDTHS-8)
 			{
 			lost_num++;
-			printf("sync_head lost:%d\n",lost_num);
+			//printf("sync_head lost:%d\n",lost_num);
 
 			return 0;
 			}
-printf("head hex:%x,%x\n",*(gm_p+8),*(gm_p+9));
+//printf("head hex:%x,%x\n",*(gm_p+8),*(gm_p+9));
 
 //		pk_total_num= *((short *)gm_p+5+4);
 //pk_total_num= *((short *)gm_p+5+4);
@@ -492,7 +492,7 @@ printf("head hex:%x,%x\n",*(gm_p+8),*(gm_p+9));
 			//	int packet_id= *((short *)gm_p+7);
 			//	sum_r = *((short *)gm_p+8);
 
-				printf("all num:%d\n",pk_total_num);
+				//printf("all num:%d\n",pk_total_num);
 				//printf("this packet:%d\n",this_pk_num);
 				//printf("packet id:%d\n",packet_id);
 pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
@@ -519,7 +519,7 @@ else
 
 				gm_p++;
 				}
-	printf("buf_send_p,%d\n",buf_send_p);
+	//printf("buf_send_p,%d\n",buf_send_p);
 
 				if(buf_send_p==pk_total_num)
 				{
