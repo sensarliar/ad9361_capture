@@ -441,6 +441,8 @@ int mm;
 
 			int ii =0;
 			int k=0;
+
+RECAPTURE:
 if(!pkg_cont_flag)
 {
 			for(;k<sample_count*IIO_BUFFER_BUS_WIDTHS-8;k++)
@@ -524,7 +526,7 @@ buff_send[2]=0xff;
 buff_send[3]=0xff;
 buff_send[4]=0xff;
 buff_send[5]=0xff;
-
+/*
 buff_send[6]=0x66;
 buff_send[7]=0x0d;
 buff_send[8]=0x06;
@@ -539,7 +541,7 @@ gg=buff_send[29];
 buff_send[29]=0x58;
 buff_send[33]=0x4d;
 
-
+*/
 
 
 
@@ -549,6 +551,11 @@ buff_send[33]=0x4d;
 				//printf("send out datanum: %d,id:%d\n",inject_num,packet_id);
 				buf_send_p=0;
 pkg_cont_flag =0;
+if(ii<sample_count*IIO_BUFFER_BUS_WIDTHS)
+{
+k=ii;
+goto RECAPTURE;
+}
 				}
 				else if(buf_send_p>pk_total_num)
 				{
