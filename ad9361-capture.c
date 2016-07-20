@@ -320,8 +320,12 @@ buf[7]=0x22;
 			 }
 if((jjj>0) &&(jjj<IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE))
 {
-				
-iio_buffer_push(dds_buffer_gm);
+int tmp_jjj;
+tmp_jjj=jjj/IIO_BUFFER_BUS_WIDTHS;
+if(jjj%IIO_BUFFER_BUS_WIDTHS>0)
+tmp_jjj++;
+iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);			
+//iio_buffer_push(dds_buffer_gm);
 
 }
 
