@@ -48,7 +48,7 @@
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
 #define GHZ(x) ((long long)(x*1000000000.0 + .5))
 
-#define IIO_BUFFER_SIZE 512
+#define IIO_BUFFER_SIZE 128
 #define IIO_BUFFER_BUS_WIDTHS 8
 
   pcap_t * device_eth0; 
@@ -293,8 +293,8 @@ buf[7]=0x99;
 		  for(; i<pkthdr->len; )
   			{
 				//buf[jjj] = packet[i];
-buf[jjj] = (i/8)*8+(7-i%8);
-//buf[jjj] = i;
+//buf[jjj] = (i/8)*8+(7-i%8);
+buf[jjj] = i;
 				++i,++jjj;
 				if(jjj>=IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE)
 				{
@@ -303,11 +303,11 @@ buf[jjj] = (i/8)*8+(7-i%8);
 				break;
 				}
 			 }
-
+/*
 		int ret = iio_buffer_push(dds_buffer_gm);
 		if (ret < 0)
 			printf("Error occured while writing to buffer: %d\n", ret);
-
+*/
 
 	 len_left=len_left-(IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
 	}while(len_left>0);
@@ -403,6 +403,8 @@ static int last_pk_id=0;
 static u_char buff_send[65535];
 static unsigned int buf_send_p=0;
 static char sync_head[8];
+static bool pkg_cont_flag =0;
+unsigned int pk_total_num =0;
 
 
 static bool capture_process(void)
@@ -436,76 +438,68 @@ int mm;
 			//u_char *gm_p = iio_buffer_start(rxbuf);
 //printf("iio_buffer_start(rxbuf) %x: iio_buffer_end(rxbuf) %x,iio_buffer_end(rxbuf) %x\n",iio_buffer_start(rxbuf),iio_buffer_end(rxbuf),iio_buffer_step(rxbuf));
 
+
 			int ii =0;
 			int k=0;
-			for(;k<sample_count*IIO_BUFFER_BUS_WIDTHS;k++)
-			{
-/*
-if(k=0)
+if(!pkg_cont_flag)
 {
-				for(mm=0;mm<24;mm++)
-				printf("data count %d: value %d\n",mm,*(gm_p+mm));
-}
-*/
-//(i/8)*8+(7-i%8);
+			for(;k<sample_count*IIO_BUFFER_BUS_WIDTHS-8;k++)
+			{
+
 
 //if(k<sample_count*IIO_BUFFER_BUS_WIDTHS)
-//				printf("data count %x: value %x\n",k,*(gm_p+(k/8)*8+(7-k%8)));
+//				printf("data count %x: value %x\n",k,*(gm_p));
 
 				if(strncmp(gm_p,sync_head,8)==0)
 				{
 				printf("sync_head found:%d\n",k);
 				break;
 				}
-				//gm_p++;
+				gm_p++;
 			}
-			if(k==sample_count*IIO_BUFFER_BUS_WIDTHS)
+			if(k==sample_count*IIO_BUFFER_BUS_WIDTHS-8)
 			{
 			lost_num++;
-			//printf("sync_head lost:%d\n",lost_num);
-
-//if(lost_num>5)
-//stop = true;
+			printf("sync_head lost:%d\n",lost_num);
 
 			return 0;
 			}
+printf("head hex:%x,%x\n",*(gm_p+8),*(gm_p+9));
 
-/*		
-		unsigned int pk_total_num= *((short *)gm_p+5);
-				int this_pk_num=*((short *)gm_p+6);
-				int packet_id= *((short *)gm_p+7);
-				sum_r = *((short *)gm_p+8);
+//		pk_total_num= *((short *)gm_p+5+4);
+//pk_total_num= *((short *)gm_p+5+4);
+			//	int this_pk_num=*((short *)gm_p+6);
+			//	int packet_id= *((short *)gm_p+7);
+			//	sum_r = *((short *)gm_p+8);
 
-				//printf("all num:%d\n",pk_total_num);
+				printf("all num:%d\n",pk_total_num);
 				//printf("this packet:%d\n",this_pk_num);
 				//printf("packet id:%d\n",packet_id);
+pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
 
-				if(buf_send_p>0)
-				{
-					if(last_pk_id!=packet_id)
-					{
-				buf_send_p=0;
-				printf("packet not incomplete!\n");
-				//break;
-					}
+ii=k+16;
+gm_p=gm_p+16;
 
-				}
+}
+else
+{
+}
+		
 
-				for(;(ii<sample_count*IIO_BUFFER_BUS_WIDTHS-k)&&(ii<this_pk_num+16-k);ii++)
+
+				for(;(ii<sample_count*IIO_BUFFER_BUS_WIDTHS)&&(buf_send_p<pk_total_num);ii++)
 				{
 				//if((ii<6)||(ii>sample_count*2-3))
 				//printf("data count %d: value %d\n",ii,*(gm_p));
 		
-					if(ii>15)
-					{
+
 					buff_send[buf_send_p]=*(gm_p);
 					buf_send_p++;
 
-					}
 
 				gm_p++;
 				}
-
+	printf("buf_send_p,%d\n",buf_send_p);
 
 				if(buf_send_p==pk_total_num)
 				{
@@ -522,25 +516,55 @@ if(k=0)
 	#endif
 
 
+
+
+buff_send[0]=0xff;
+buff_send[1]=0xff;
+buff_send[2]=0xff;
+buff_send[3]=0xff;
+buff_send[4]=0xff;
+buff_send[5]=0xff;
+
+buff_send[6]=0x66;
+buff_send[7]=0x0d;
+buff_send[8]=0x06;
+buff_send[9]=0xc8;
+buff_send[10]=0x0a;
+buff_send[11]=0xe3;
+
+
+char gg;
+gg=buff_send[29];
+//buff_send[29]=buff_send[33];
+buff_send[29]=0x58;
+buff_send[33]=0x4d;
+
+
+
+
+
 				//printf("data buf_send_p %d,pk_total_num:%d\n",buf_send_p,pk_total_num);
 				pcap_inject(device_eth0,buff_send,pk_total_num);
 //int inject_num=pcap_inject(device_eth0,buff_send,pk_total_num);
 				//printf("send out datanum: %d,id:%d\n",inject_num,packet_id);
 				buf_send_p=0;
+pkg_cont_flag =0;
 				}
 				else if(buf_send_p>pk_total_num)
 				{
 				printf("something wrong\n");
 				buf_send_p=0;
+pkg_cont_flag =0;
 				}
 				else
 				{
-				last_pk_id = packet_id;
+//				last_pk_id = packet_id;
+pkg_cont_flag =1;
 				}
 
 
 
-*/
+
 
 	return !stop_capture;
 }
@@ -556,13 +580,13 @@ int main (int argc, char **argv)
 {
 
 
-sync_head[0]=0x99;
-sync_head[1]=0x88;
-sync_head[2]=0x77;
-sync_head[3]=0x66;
-sync_head[4]=0x55;
-sync_head[5]=0x44;
-sync_head[6]=0x33;
+sync_head[0]=0x44;
+sync_head[1]=0x55;
+sync_head[2]=0x66;
+sync_head[3]=0x77;
+sync_head[4]=0x88;
+sync_head[5]=0x99;
+sync_head[6]=0x11;
 sync_head[7]=0x22;
 
 	// Streaming devices
@@ -629,6 +653,8 @@ sync_head[7]=0x22;
 		shutdown();
 	}
 
+
+printf("iio_device_get_sample_size  %d\n",iio_device_get_sample_size(tx));
 open_eth0();
 //open_eth1();
 
