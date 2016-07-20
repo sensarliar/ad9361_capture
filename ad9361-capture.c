@@ -234,11 +234,11 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
 
 
 
-
 void getPacket(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * packet)
 {
   short * id = (short *)arg;
   
+++(*id);
 //  printf("id: %d\n", ++(*id));
 u_char *buf;
     int sum;
@@ -253,22 +253,34 @@ unsigned int jjj=16;
             sum = do_checksum_math((uint16_t *)packet, pkthdr->len);
             sum = CHECKSUM_CARRY(sum);	
 	#endif
-
-//printf("iio_buffer_start(dds_buffer_gm) %x: iio_buffer_end(dds_buffer_gm) %x,iio_buffer_end(dds_buffer_gm) %x\n",iio_buffer_start(dds_buffer_gm),iio_buffer_end(dds_buffer_gm),iio_buffer_step(dds_buffer_gm));	
-	do{
+	
+//	do{
 
 		buf = iio_buffer_start(dds_buffer_gm);
-		buf[0]=0x22;
+/*
+		buf[0]=0xAA;
 		//buf[1]=(u_char)(*id);
-buf[1]=0x33;
-buf[2]=0x44;
-buf[3]=0x55;
-buf[4]=0x66;
+buf[1]=0x55;
+buf[2]=0xBB;
+buf[3]=0x66;
+buf[4]=0xCC;
 buf[5]=0x77;
-buf[6]=0x88;
-buf[7]=0x99;
+buf[6]=0xDD;
+buf[7]=0x88;
+*/
+buf[0]=0x44;
+buf[1]=0x55;
+buf[2]=0x66;
+buf[3]=0x77;
+buf[4]=0x88;
+buf[5]=0x99;
+buf[6]=0x11;
+buf[7]=0x22;
+
 		buf[8]=(u_char)((pkthdr->len)&0xff);
 		buf[9]=(u_char)(((pkthdr->len)&0xff00)>>8);
+//buf[8] = 0x19;
+//buf[9] = 0x91;
 
 		buf[12]=(u_char)((*id)&0xff);
 		buf[13]=(u_char)(((*id)&0xff00)>>8);
@@ -285,32 +297,38 @@ buf[7]=0x99;
 		buf[11]=(u_char)((len_left&0xff00)>>8);		
 		}
 	#ifdef CHECKSUM_ENABLE	
-            //sum = do_checksum_math((uint16_t *)(&buf[16]), 2*IIO_BUFFER_SIZE-16);
+            //sum = do_checksum_math((uint16_t *)(&buf[16]), IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
             //sum = CHECKSUM_CARRY(sum);
 		buf[14]=(u_char)(sum&0xff);
 		buf[15]=(u_char)((sum&0xff00)>>8);	
 	#endif
 		  for(; i<pkthdr->len; )
   			{
-				//buf[jjj] = packet[i];
-//buf[jjj] = (i/8)*8+(7-i%8);
-buf[jjj] = i;
+				buf[jjj] = packet[i];
+//buf[jjj] = i;
+
 				++i,++jjj;
 				if(jjj>=IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE)
 				{
-
-				jjj=16;
-				break;
-				}
-			 }
-/*
 		int ret = iio_buffer_push(dds_buffer_gm);
 		if (ret < 0)
 			printf("Error occured while writing to buffer: %d\n", ret);
-*/
+				jjj=0;
+				//break;
+		buf = iio_buffer_start(dds_buffer_gm);
+				}
+			 }
+if((jjj>0) &&(jjj<IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE))
+{
+				
+iio_buffer_push(dds_buffer_gm);
 
-	 len_left=len_left-(IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
-	}while(len_left>0);
+}
+
+
+
+	// len_left=len_left-(IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
+	//}while(len_left>0);
 
 //usleep(300);
 
