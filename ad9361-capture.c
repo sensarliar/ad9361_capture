@@ -560,6 +560,8 @@ next_ii=0;
 				}
 	//printf("buf_send_p,%d\n",buf_send_p);
 
+//printf("data ii %d,pk_total_num:%d\n",ii,pk_total_num);
+
 				if(buf_send_p==pk_total_num)
 				{
 
@@ -599,19 +601,30 @@ buff_send[29]=0x58;
 buff_send[33]=0x4d;
 
 */
+///dest ip
+if(buff_send[33]==22)
+buff_send[33]=44;
+if(pk_total_num<1512)
+//printf("all num:%d\n",pk_total_num);
 
+				printf("data ii %d,pk_total_num:%d\n",ii,pk_total_num);
 
-
-				//printf("data buf_send_p %d,pk_total_num:%d\n",buf_send_p,pk_total_num);
+if(buff_send[29]!=22)
 				pcap_inject(device_eth0,buff_send,pk_total_num);
 //int inject_num=pcap_inject(device_eth0,buff_send,pk_total_num);
 				//printf("send out datanum: %d,id:%d\n",inject_num,packet_id);
 				buf_send_p=0;
 pkg_cont_flag =0;
-if(ii<sample_count*IIO_BUFFER_BUS_WIDTHS)
+if(ii<sample_count*IIO_BUFFER_BUS_WIDTHS-8)
 {
 k=ii;
 goto RECAPTURE;
+}else if(ii<sample_count*IIO_BUFFER_BUS_WIDTHS)
+{
+memcpy(last_pkg_data,gm_p-(8-(sample_count*IIO_BUFFER_BUS_WIDTHS-ii)),8);
+flag_search_both_pkg =1;
+
+			return 0;
 }
 				}
 				else if(buf_send_p>pk_total_num)
