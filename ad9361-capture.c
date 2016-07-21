@@ -428,6 +428,8 @@ static char sync_head[8];
 static bool pkg_cont_flag =0;
 unsigned int pk_total_num =0;
 
+static int next_ii=0;
+
 
 static bool capture_process(void)
 {
@@ -503,10 +505,20 @@ pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
 
 ii=k+16;
 gm_p=gm_p+16;
+if(ii>=sample_count*IIO_BUFFER_BUS_WIDTHS)
+{
+next_ii=ii%(sample_count*IIO_BUFFER_BUS_WIDTHS);
+}
+else
+{
+next_ii=0;
+}
 
 }
 else
 {
+ii=next_ii;
+gm_p=gm_p+ii;
 }
 		
 
