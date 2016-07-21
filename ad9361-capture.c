@@ -430,7 +430,7 @@ unsigned int pk_total_num =0;
 
 static int next_ii=0;
 
-static char last_pkg_data[17];
+static char last_pkg_data[20];
 static bool flag_search_both_pkg=0;
 
 
@@ -476,7 +476,14 @@ memcpy(last_pkg_data+8,gm_p,8);
 				pk_total_num= *(gm_p+kkk)+((*(gm_p+kkk+1))<<8);
 				next_ii=kkk+8;
 				pkg_cont_flag=1;
-
+int mmm=0;
+//for(;mmm<17;mmm++)
+//printf("both_serch%d,:%x\n",mmm,*(last_pkg_data+mmm));
+printf("%%%%%%%%%%%%%%%%%%%%%%%%%\n");
+mmm=0;
+//for(;mmm<17;mmm++)
+//printf("gm_p block %d,:%x\n",mmm,*(gm_p+mmm));
+printf("xxxxxxall num:%d\n",pk_total_num);
 				break;
 				}
 			}
