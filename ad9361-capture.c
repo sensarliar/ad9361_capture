@@ -41,6 +41,7 @@
 #include <matio.h>
 
 #include <math.h>
+#include <unistd.h>
 
 //#define CHECKSUM_ENABLE
 
@@ -659,14 +660,48 @@ pkg_cont_flag =1;
 
 
 
+static void usage(char *program)
+{
+	printf("%s: the dma dual direction transmit and receive function\n", program);
 
+
+	/* please keep this list sorted in alphabetical order */
+	printf( "Command line options:\n"
+		"\t-r\ttransmit frequency (MHz)\n"
+		"\t-t\treceive frequency (MHz)\n");
+
+
+	exit(-1);
+}
 
 
 
 /* simple configuration and streaming */
 int main (int argc, char **argv)
 {
+int rx_freq=2400;
+int tx_freq=2400;
+	int c;
+//	opterr = 0;
+	while ((c = getopt (argc, argv, "r:t:?")) != -1)
+		switch (c) {
+			case 'r':
+rx_freq =atoi(optarg);
+printf("freq rx:%d\n",rx_freq);
+				break;
+			case 't':
+tx_freq =atoi(optarg);
+printf("freq tx:%d\n",tx_freq);
+				break;
 
+			case '?':
+				usage(argv[0]);
+				break;
+			default:
+				printf("Unknown command line option\n");
+				usage(argv[0]);
+				break;
+		}
 
 sync_head[0]=0x44;
 sync_head[1]=0x55;
@@ -695,13 +730,13 @@ sync_head[7]=0x22;
 	// RX stream config
 	rxcfg.bw_hz = MHZ(18);   // 2 MHz rf bandwidth
 	rxcfg.fs_hz = MHZ(30.72);   // 2.5 MS/s rx sample rate
-	rxcfg.lo_hz = GHZ(2.4);// 2.5 GHz rf frequency
+	rxcfg.lo_hz = MHZ(rx_freq);// 2.4 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
 
 	// TX stream config
 	txcfg.bw_hz = MHZ(18); // 1.5 MHz rf bandwidth
 	txcfg.fs_hz = MHZ(30.72);   // 2.5 MS/s tx sample rate
-	txcfg.lo_hz = GHZ(2.4); // 2.5 GHz rf frequency
+	txcfg.lo_hz = MHZ(tx_freq); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
 	printf("* Acquiring IIO context\n");
