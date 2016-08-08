@@ -66,6 +66,8 @@ struct stream_cfg {
 	long long fs_hz; // Baseband sample rate in Hz
 	long long lo_hz; // Local oscillator frequency in Hz
 	const char* rfport; // Port name
+	const char* gain_control_mode; //fast track
+	long long hardwaregain; //hardwaregain 0db
 };
 
 /* static scratch mem for strings */
@@ -221,6 +223,14 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
 	wr_ch_str(chn, "rf_port_select",     cfg->rfport);
 	wr_ch_lli(chn, "rf_bandwidth",       cfg->bw_hz);
 	wr_ch_lli(chn, "sampling_frequency", cfg->fs_hz);
+
+if(type == TX)
+{
+	wr_ch_lli(chn, "hardwaregain", cfg->hardwaregain);
+}else if(type == RX)
+{
+	wr_ch_str(chn, "gain_control_mode",     cfg->gain_control_mode);
+}
 
 	// Configure LO channel
 	printf("* Acquiring AD9361 %s lo channel\n", type == TX ? "TX" : "RX");
@@ -732,12 +742,14 @@ sync_head[7]=0x22;
 	rxcfg.fs_hz = MHZ(30.72);   // 2.5 MS/s rx sample rate
 	rxcfg.lo_hz = MHZ(rx_freq);// 2.4 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
+rxcfg.gain_control_mode = "fast_attack";
 
 	// TX stream config
 	txcfg.bw_hz = MHZ(18); // 1.5 MHz rf bandwidth
 	txcfg.fs_hz = MHZ(30.72);   // 2.5 MS/s tx sample rate
 	txcfg.lo_hz = MHZ(tx_freq); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
+txcfg.hardwaregain = 0;
 
 	printf("* Acquiring IIO context\n");
 	assert((ctx = iio_create_default_context()) && "No context");
