@@ -50,7 +50,7 @@
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
 #define GHZ(x) ((long long)(x*1000000000.0 + .5))
 
-#define IIO_BUFFER_SIZE 128
+#define IIO_BUFFER_SIZE 64
 #define IIO_BUFFER_BUS_WIDTHS 8
 
   pcap_t * device_eth0; 
