@@ -792,6 +792,8 @@ txcfg.hardwaregain = 0;
 	}
 
 reset_qpsk_rx();
+usleep(1000);
+unreset_qpsk_rx();
 
 printf("iio_device_get_sample_size  %d\n",iio_device_get_sample_size(tx));
 open_eth0();
