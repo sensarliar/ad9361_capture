@@ -42,6 +42,7 @@
 
 #include <math.h>
 #include <unistd.h>
+#include "rxfifo_reset.h"
 
 //#define CHECKSUM_ENABLE
 
@@ -252,8 +253,7 @@ void getPacket(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * p
 ++(*id);
 //  printf("id: %d\n", ++(*id));
 u_char *buf;
-    int sum;
-    sum = 0;
+
 
  short len_left = pkthdr->len;
   unsigned int i=0;
@@ -261,6 +261,8 @@ u_char *buf;
 unsigned int jjj=16;
 
 	#ifdef CHECKSUM_ENABLE	
+    int sum;
+    sum = 0;
             sum = do_checksum_math((uint16_t *)packet, pkthdr->len);
             sum = CHECKSUM_CARRY(sum);	
 	#endif
@@ -436,7 +438,7 @@ int capture_function = 0;
 
 bool stop_capture =0;
 //static bool completed =0;
-static int last_pk_id=0;
+//static int last_pk_id=0;
 static u_char buff_send[65535];
 static unsigned int buf_send_p=0;
 static char sync_head[8];
@@ -453,10 +455,8 @@ static bool capture_process(void)
 {
 static int lost_num =0;
 
-    int sum_calc,sum_r;
-    sum_calc = 0;
-    sum_r = 0;
-int mm;
+
+//int mm;
 //	unsigned int i;
 
 			ssize_t ret = iio_buffer_refill(rxbuf);
@@ -588,6 +588,9 @@ next_ii=0;
 				{
 
 	#ifdef CHECKSUM_ENABLE	
+    int sum_calc,sum_r;
+    sum_calc = 0;
+    sum_r = 0;
             sum_calc = do_checksum_math((uint16_t *)buff_send, pk_total_num);
             sum_calc = CHECKSUM_CARRY(sum_calc);	
 	if(sum_r == sum_calc)
@@ -788,10 +791,12 @@ txcfg.hardwaregain = 0;
 		shutdown();
 	}
 
+reset_qpsk_rx();
 
 printf("iio_device_get_sample_size  %d\n",iio_device_get_sample_size(tx));
 open_eth0();
 //open_eth1();
+
 
 
 dds_buffer_gm =txbuf;

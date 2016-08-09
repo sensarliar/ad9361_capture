@@ -27,10 +27,13 @@ LDFLAGS = `pkg-config --libs $(DEPENDENCIES)`
 
 all: $(TARGETS)
 
-ad9361-capture : ad9361-capture.o
+rxfifo_reset.o : rxfifo_reset.c
+	$(CC) rxfifo_reset.c -c $(CFLAGS)
+
+ad9361-capture : ad9361-capture.o rxfifo_reset.o
 	$(CC) -o $@ $^ $(LDFLAGS) -liio -lpcap -lpthread
 
 clean:
-	rm -f $(TARGETS) $(TARGETS:%=%.o)
+	rm -f $(TARGETS) $(TARGETS:%=%.o) rxfifo_reset.o
 install: 
 	cp $(TARGETS) ./../../gao
