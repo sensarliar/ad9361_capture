@@ -610,7 +610,17 @@ flag_search_both_pkg =1;
 				//printf("all num:%d\n",pk_total_num);
 				//printf("this packet:%d\n",this_pk_num);
 				//printf("packet id:%d\n",packet_id);
-pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
+	if(k+9>=sample_count*IIO_BUFFER_BUS_WIDTHS)
+	{
+pk_total_num=0;
+next_ii=0;
+pkg_cont_flag=0;
+printf("pk_total_num set wrong!");
+return 0;
+	}
+	else{
+	pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
+	}
 
 ii=k+16;
 gm_p=gm_p+16;
