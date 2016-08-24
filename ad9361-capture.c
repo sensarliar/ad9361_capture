@@ -364,8 +364,11 @@ tmp_jjj++;
       perror("pthread_mutex_lock");                          
      }                                                      
      else  
+{
+memset((u_char *)(iio_buffer_start(dds_buffer_gm))+jjj,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-jjj);
 //iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
 iio_buffer_push(dds_buffer_gm);
+}
      if(pthread_mutex_unlock(&mutex)!=0){                   
      perror("pthread_mutex_unlock");                        
      }    
