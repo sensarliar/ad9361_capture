@@ -49,7 +49,7 @@
 #include <unistd.h>
 #include "rxfifo_reset.h"
 
-//#define CHECKSUM_ENABLE
+#define CHECKSUM_ENABLE
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
@@ -300,6 +300,12 @@ buf[7]=0x22;
 		buf[9]=(u_char)(((pkthdr->len)&0xff00)>>8);
 //buf[8] = 0x19;
 //buf[9] = 0x91;
+	#ifdef CHECKSUM_ENABLE	
+            //sum = do_checksum_math((uint16_t *)(&buf[16]), IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
+            //sum = CHECKSUM_CARRY(sum);
+		buf[10]=(u_char)(sum&0xff);
+		buf[11]=(u_char)((sum&0xff00)>>8);	
+	#endif
 
 		buf[12]=(u_char)((*id)&0xff);
 		buf[13]=(u_char)(((*id)&0xff00)>>8);
@@ -308,19 +314,14 @@ buf[7]=0x22;
 		{
 		//buf[4]=0xf8;
 		//buf[5]=0x03;	
-		buf[10]=(u_char)((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff);
-		buf[11]=(u_char)(((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff00)>>8);	
+		buf[14]=(u_char)((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff);
+		buf[15]=(u_char)(((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff00)>>8);	
 		}else
 		{
-		buf[10]=(u_char)(len_left&0xff);
-		buf[11]=(u_char)((len_left&0xff00)>>8);		
+		buf[14]=(u_char)(len_left&0xff);
+		buf[15]=(u_char)((len_left&0xff00)>>8);		
 		}
-	#ifdef CHECKSUM_ENABLE	
-            //sum = do_checksum_math((uint16_t *)(&buf[16]), IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
-            //sum = CHECKSUM_CARRY(sum);
-		buf[14]=(u_char)(sum&0xff);
-		buf[15]=(u_char)((sum&0xff00)>>8);	
-	#endif
+
 		  for(; i<pkthdr->len; )
   			{
 				buf[jjj] = packet[i];
@@ -515,6 +516,9 @@ static int next_ii=0;
 static char last_pkg_data[20];
 static bool flag_search_both_pkg=0;
 
+	#ifdef CHECKSUM_ENABLE	
+    int sum_r=0;
+	#endif
 
 static bool capture_process(void)
 {
@@ -554,6 +558,9 @@ memcpy(last_pkg_data+8,gm_p,8);
 				if(strncmp(last_pkg_data+kkk,sync_head,8)==0)
 				{
 				pk_total_num= *(gm_p+kkk)+((*(gm_p+kkk+1))<<8);
+	#ifdef CHECKSUM_ENABLE	
+    sum_r =  *(gm_p+kkk+2)+((*(gm_p+kkk+3))<<8);
+	#endif
 				next_ii=kkk+8;
 				pkg_cont_flag=1;
 //int mmm=0;
@@ -620,6 +627,16 @@ return 0;
 	}
 	else{
 	pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
+	#ifdef CHECKSUM_ENABLE	
+if(k+10>=sample_count*IIO_BUFFER_BUS_WIDTHS)
+{
+printf("checksum error!%d.\n",k+8);
+sum_r =0;
+}else
+{
+    sum_r = *(gm_p+10)+((*(gm_p+11))<<8);
+}
+	#endif
 	}
 
 ii=k+16;
@@ -663,15 +680,19 @@ next_ii=0;
 				{
 
 	#ifdef CHECKSUM_ENABLE	
-    int sum_calc,sum_r;
+    int sum_calc;
     sum_calc = 0;
-    sum_r = 0;
+    
             sum_calc = do_checksum_math((uint16_t *)buff_send, pk_total_num);
             sum_calc = CHECKSUM_CARRY(sum_calc);	
-	if(sum_r == sum_calc)
+	if(sum_r != sum_calc)
 	{
-	printf("checksum crc received wrong\n");
+	printf("checksum crc received wrong,not equal\n");
 	buf_send_p=0;
+pkg_cont_flag =0;
+next_ii=0;
+sum_r =0;
+flag_search_both_pkg =0;
 	return !stop_capture;
 	}
 	#endif
