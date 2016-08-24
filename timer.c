@@ -29,7 +29,7 @@ printf ("cant print anything!");
 
 void timer_set(void)
 {
-    struct itimerspec itimer = { { 0, 8000000 }, { 0, 8000000 } };
+    struct itimerspec itimer = { { 0, 30000000 }, { 0, 30000000 } };
 	    if (timer_settime (timer, 0, &itimer, NULL) < 0)
     {
         fprintf (stderr, "[%d]: %s\n", __LINE__, strerror (errno));

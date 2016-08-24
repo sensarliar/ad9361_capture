@@ -364,8 +364,8 @@ tmp_jjj++;
       perror("pthread_mutex_lock");                          
      }                                                      
      else  
-iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
-//iio_buffer_push(dds_buffer_gm);
+//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
+iio_buffer_push(dds_buffer_gm);
      if(pthread_mutex_unlock(&mutex)!=0){                   
      perror("pthread_mutex_unlock");                        
      }    
@@ -385,6 +385,7 @@ timer_set();
 void tx_dirty_data(union sigval sigval)
 {
 int ret;
+u_char *buf_temp;
 ret=pthread_mutex_trylock(&mutex);                     
      if(ret==EBUSY)
 {                                         
@@ -398,7 +399,12 @@ ret=pthread_mutex_trylock(&mutex);
         exit(1);                                         
        }                                                
        else
-            iio_buffer_push(dds_buffer_gm);                                 
+{
+buf_temp = iio_buffer_start(dds_buffer_gm);
+memset(buf_temp,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE);
+iio_buffer_push(dds_buffer_gm);
+}
+                                             
        //printf("pthread2:pthread2 got lock.The variable is%d\n",lock_var);                                 
                /*互斥锁接锁*/                                   
        if(pthread_mutex_unlock(&mutex)!=0)
@@ -883,6 +889,7 @@ g_thread_new("pcap loop", (void *) &always_loop, NULL);
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
 timer_start();
+timer_set();
 
 	while (!stop)
 	{
