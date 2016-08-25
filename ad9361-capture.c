@@ -509,15 +509,18 @@ static u_char buff_send[65535];
 static unsigned int buf_send_p=0;
 static char sync_head[8];
 static bool pkg_cont_flag =0;
-unsigned int pk_total_num =0;
+static unsigned int pk_total_num =0;
+static unsigned int last_pk_total_num =0;
 
 static int next_ii=0;
 
 static char last_pkg_data[20];
 static bool flag_search_both_pkg=0;
+static bool head_not_whole_flag=0;
 
 	#ifdef CHECKSUM_ENABLE	
-    int sum_r=0;
+static int sum_r=0;
+static int last_sum_r=0;
 	#endif
 
 static bool capture_process(void)
@@ -619,43 +622,89 @@ flag_search_both_pkg =1;
 				//printf("packet id:%d\n",packet_id);
 	if(k+9>=sample_count*IIO_BUFFER_BUS_WIDTHS)
 	{
-pk_total_num=0;
-next_ii=0;
-pkg_cont_flag=0;
+//pk_total_num=0;
+//next_ii=0;
+//pkg_cont_flag=0;
 printf("pk_total_num set wrong!%d.\n",k+8);
-return 0;
+//return 0;
 	}
 	else{
 	pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
-	#ifdef CHECKSUM_ENABLE	
-if(k+11>=sample_count*IIO_BUFFER_BUS_WIDTHS)
-{
-printf("checksum error!%d.\n",k+8);
-sum_r =0;
-}else
-{
-    sum_r = *(gm_p+10)+((*(gm_p+11))<<8);
-}
-	#endif
+			#ifdef CHECKSUM_ENABLE	
+		if(k+11>=sample_count*IIO_BUFFER_BUS_WIDTHS)
+		{
+		printf("checksum error!%d.\n",k+8);
+		//sum_r =0;
+		}else
+		{
+		    sum_r = *(gm_p+10)+((*(gm_p+11))<<8);
+		}
+			#endif
 	}
 
-ii=k+16;
-gm_p=gm_p+16;
-if(ii>=sample_count*IIO_BUFFER_BUS_WIDTHS)
-{
-next_ii=ii%(sample_count*IIO_BUFFER_BUS_WIDTHS);
+	ii=k+16;
+
+		if(ii>=sample_count*IIO_BUFFER_BUS_WIDTHS)
+		{
+			next_ii=ii%(sample_count*IIO_BUFFER_BUS_WIDTHS);
+			if(next_ii==8)
+			{}
+			else if (next_ii==7)
+			{
+			last_pk_total_num= *(gm_p+8);///length in next pkg
+			}
+			else if (next_ii==6)
+			{
+			//last_pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
+			}
+	#ifdef CHECKSUM_ENABLE
+			else if (next_ii==5)
+			{
+			last_sum_r = *(gm_p+10);//sum_r in next pkg
+			}
+	#endif
+			head_not_whole_flag =1;
+			flag_search_both_pkg =0;
+			pkg_cont_flag=1;
+			return 0;
+		}
+		else
+		{
+		next_ii=0;
+		}
+	gm_p=gm_p+16;
 }
 else
 {
-next_ii=0;
+if(head_not_whole_flag==1)
+{
+			if(next_ii==8)
+			{
+			pk_total_num= *(gm_p)+((*(gm_p+1))<<8);
+			}
+			else if (next_ii==7)
+			{
+			//last_pk_total_num= *(gm_p+8);///length in next pkg
+			pk_total_num= last_pk_total_num+((*(gm_p))<<8);
+			}
+	#ifdef CHECKSUM_ENABLE
+			else if (next_ii==6)
+			{
+			//last_pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
+		    	sum_r = *(gm_p)+((*(gm_p+1))<<8);
+			}
+			else if (next_ii==5)
+			{
+			//last_sum_r = *(gm_p+10);//sum_r in next pkg
+		    	sum_r = last_sum_r+((*(gm_p+1))<<8);
+			}
+	#endif
+head_not_whole_flag=0;
 }
 
-}
-else
-{
-ii=next_ii;
-gm_p=gm_p+ii;
-next_ii=0;
+	ii=next_ii;
+	gm_p=gm_p+ii;
+	next_ii=0;
 }
 		
 
@@ -693,6 +742,7 @@ pkg_cont_flag =0;
 next_ii=0;
 sum_r =0;
 flag_search_both_pkg =0;
+head_not_whole_flag=0;
 	return !stop_capture;
 	}
 	#endif
