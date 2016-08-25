@@ -681,11 +681,13 @@ if(head_not_whole_flag==1)
 			if(next_ii==8)
 			{
 			pk_total_num= *(gm_p)+((*(gm_p+1))<<8);
+		    	sum_r = *(gm_p+2)+((*(gm_p+3))<<8);
 			}
 			else if (next_ii==7)
 			{
 			//last_pk_total_num= *(gm_p+8);///length in next pkg
 			pk_total_num= last_pk_total_num+((*(gm_p))<<8);
+		    	sum_r = *(gm_p+1)+((*(gm_p+2))<<8);
 			}
 	#ifdef CHECKSUM_ENABLE
 			else if (next_ii==6)
@@ -705,6 +707,18 @@ head_not_whole_flag=0;
 	ii=next_ii;
 	gm_p=gm_p+ii;
 	next_ii=0;
+}
+
+if(pk_total_num>1560)&&(pk_total_num<50)
+{
+	printf("length too large or too short,%d.\n",pk_total_num);
+	buf_send_p=0;
+pkg_cont_flag =0;
+next_ii=0;
+sum_r =0;
+flag_search_both_pkg =0;
+head_not_whole_flag=0;
+	return !stop_capture;
 }
 		
 
