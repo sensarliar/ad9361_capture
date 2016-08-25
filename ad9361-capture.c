@@ -617,7 +617,7 @@ flag_search_both_pkg =1;
 				//printf("all num:%d\n",pk_total_num);
 				//printf("this packet:%d\n",this_pk_num);
 				//printf("packet id:%d\n",packet_id);
-	if(k+8>=sample_count*IIO_BUFFER_BUS_WIDTHS)
+	if(k+9>=sample_count*IIO_BUFFER_BUS_WIDTHS)
 	{
 pk_total_num=0;
 next_ii=0;
@@ -628,7 +628,7 @@ return 0;
 	else{
 	pk_total_num= *(gm_p+8)+((*(gm_p+9))<<8);
 	#ifdef CHECKSUM_ENABLE	
-if(k+10>=sample_count*IIO_BUFFER_BUS_WIDTHS)
+if(k+11>=sample_count*IIO_BUFFER_BUS_WIDTHS)
 {
 printf("checksum error!%d.\n",k+8);
 sum_r =0;
