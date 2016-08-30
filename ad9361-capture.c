@@ -709,7 +709,7 @@ head_not_whole_flag=0;
 	next_ii=0;
 }
 
-if(pk_total_num>1560)&&(pk_total_num<50)
+if((pk_total_num>1560)||(pk_total_num<50))
 {
 	printf("length too large or too short,%d.\n",pk_total_num);
 	buf_send_p=0;
