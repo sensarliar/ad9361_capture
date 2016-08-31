@@ -54,6 +54,7 @@ static struct iio_buffer  *rxbuf = NULL;
 static struct iio_buffer  *txbuf = NULL;
 
 static bool stop;
+FILE *infile;
 
 //#define NUM_PUSH_BUF 260000/16
 #define NUM_PUSH_BUF 16250
@@ -61,6 +62,7 @@ static bool stop;
 /* cleanup and exit */
 static void shutdown()
 {
+if(infile){fclose(infile);}
 	printf("* Destroying buffers\n");
 	if (rxbuf) { iio_buffer_destroy(rxbuf); }
 	if (txbuf) { iio_buffer_destroy(txbuf); }
@@ -174,48 +176,7 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
 }
 
 
-//FILE *infile;
-char file_name_gm[80]="/media/boot/gaoming/gps120_xly.mat";
-//struct iio_buffer *dds_buffer_gm;
-static void always_gps_loop(void)
-{
-long lSize;
-long kk=0;
-printf("gaoming002,%s\n",file_name_gm);
-	FILE *infile = fopen(file_name_gm, "r");
-fseek(infile,0,SEEK_END);
-lSize=ftell(infile);
-//rewind(infile);
-printf("gaoming003,%ld,%ld\n",lSize,lSize/NUM_PUSH_BUF/4);
 
-char *buf_ming;
-while(1)
-{
-rewind(infile);
-kk=0;
-for(;kk<lSize/NUM_PUSH_BUF/4;kk++)
-{
-	buf_ming=iio_buffer_start(txbuf);
-		if(fread(buf_ming,4,NUM_PUSH_BUF,infile)!=NUM_PUSH_BUF)
-	{
-		//ret=100;
-printf("gaoming005\n");
-		break;
-	}
-		iio_buffer_push(txbuf);
-//printf("gaoming006\n");
-usleep(300);
-}
-printf("gaoming007\n");
-}
-fclose(infile);
-	//memcpy(iio_buffer_start(manager->dds_buffer), buf,
-	//		iio_buffer_end(manager->dds_buffer) - iio_buffer_start(manager->dds_buffer));
-
-printf("gaoming008\n");
-
-	//free(buf);
-}
 
 
 
@@ -287,12 +248,49 @@ int main (int argc, char **argv)
 	}
 
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
+
+
+//FILE *infile;
+char file_name_gm[80]="/media/boot/gaoming/gps120_xly.mat";
+//struct iio_buffer *dds_buffer_gm;
+
+long lSize;
+long kk=0;
+printf("gaoming002,%s\n",file_name_gm);
+	infile = fopen(file_name_gm, "r");
+fseek(infile,0,SEEK_END);
+lSize=ftell(infile);
+//rewind(infile);
+printf("gaoming003,%ld,%ld\n",lSize,lSize/NUM_PUSH_BUF/4);
+
+char *buf_ming;
+
+
+
+
+
+
 	while (!stop)
 	{
 
-always_gps_loop();
+//always_gps_loop();
 //iio_device_get_sample_size(tx)
-
+rewind(infile);
+kk=0;
+for(;kk<lSize/NUM_PUSH_BUF/4;kk++)
+{
+	buf_ming=iio_buffer_start(txbuf);
+		if(fread(buf_ming,4,NUM_PUSH_BUF,infile)!=NUM_PUSH_BUF)
+	{
+		//ret=100;
+printf("gaoming005\n");
+		break;
+	}
+		iio_buffer_push(txbuf);
+//printf("gaoming006\n");
+usleep(300);
+}
+printf("gaoming007\n");
 	}
 
 	shutdown();
