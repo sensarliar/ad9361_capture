@@ -262,6 +262,7 @@ fseek(infile,0,SEEK_END);
 lSize=ftell(infile);
 //rewind(infile);
 printf("gaoming003,%ld,%ld\n",lSize,lSize/NUM_PUSH_BUF/4);
+printf("gaoming006,%d\n",iio_device_get_sample_size(tx));
 
 char *buf_ming;
 
