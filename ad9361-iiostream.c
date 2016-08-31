@@ -220,17 +220,18 @@ int main (int argc, char **argv)
 	assert(get_ad9361_stream_ch(ctx, TX, tx, 1, &tx0_q) && "TX chan q not found");
 
 	printf("* Enabling IIO streaming channels\n");
-	iio_channel_enable(rx0_i);
-	iio_channel_enable(rx0_q);
+	//iio_channel_enable(rx0_i);
+	//iio_channel_enable(rx0_q);
 	iio_channel_enable(tx0_i);
 	iio_channel_enable(tx0_q);
-
+/*
 	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
 	rxbuf = iio_device_create_buffer(rx, 1024*1024, false);
 	if (!rxbuf) {
 		perror("Could not create RX buffer");
 		shutdown();
 	}
+*/
 	txbuf = iio_device_create_buffer(tx, NUM_PUSH_BUF, false);
 	if (!txbuf) {
 		perror("Could not create TX buffer");
@@ -240,7 +241,7 @@ int main (int argc, char **argv)
 	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
 	while (!stop)
 	{
-		ssize_t nbytes_rx, nbytes_tx;
+		ssize_t  nbytes_tx;
 		void *p_dat, *p_end;
 		ptrdiff_t p_inc;
 
@@ -248,20 +249,7 @@ int main (int argc, char **argv)
 		nbytes_tx = iio_buffer_push(txbuf);
 		if (nbytes_tx < 0) { printf("Error pushing buf %d\n", (int) nbytes_tx); shutdown(); }
 
-		// Refill RX buffer
-		nbytes_rx = iio_buffer_refill(rxbuf);
-		if (nbytes_rx < 0) { printf("Error refilling buf %d\n",(int) nbytes_rx); shutdown(); }
-
-		// READ: Get pointers to RX buf and read IQ from RX buf port 0
-		p_inc = iio_buffer_step(rxbuf);
-		p_end = iio_buffer_end(rxbuf);
-		for (p_dat = iio_buffer_first(rxbuf, rx0_i); p_dat < p_end; p_dat += p_inc) {
-			// Example: swap I and Q
-			const int16_t i = ((int16_t*)p_dat)[0]; // Real (I)
-			const int16_t q = ((int16_t*)p_dat)[1]; // Imag (Q)
-			((int16_t*)p_dat)[0] = q;
-			((int16_t*)p_dat)[1] = i;
-		}
+		
 
 		// WRITE: Get pointers to TX buf and write IQ to TX buf port 0
 		p_inc = iio_buffer_step(txbuf);
@@ -273,7 +261,7 @@ int main (int argc, char **argv)
 		}
 
 		// Sample counter increment and status output
-		nrx += nbytes_rx / iio_device_get_sample_size(rx);
+		//nrx += nbytes_rx / iio_device_get_sample_size(rx);
 		ntx += nbytes_tx / iio_device_get_sample_size(tx);
 		printf("\tRX %8.2f MSmp, TX %8.2f MSmp\n", nrx/1e6, ntx/1e6);
 	}
