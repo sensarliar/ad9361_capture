@@ -53,6 +53,9 @@ static struct iio_buffer  *txbuf = NULL;
 
 static bool stop;
 
+//#define NUM_PUSH_BUF 260000/16
+#define NUM_PUSH_BUF 16250
+
 /* cleanup and exit */
 static void shutdown()
 {
@@ -228,7 +231,7 @@ int main (int argc, char **argv)
 		perror("Could not create RX buffer");
 		shutdown();
 	}
-	txbuf = iio_device_create_buffer(tx, 1024*1024, false);
+	txbuf = iio_device_create_buffer(tx, NUM_PUSH_BUF, false);
 	if (!txbuf) {
 		perror("Could not create TX buffer");
 		shutdown();
