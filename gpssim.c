@@ -2090,6 +2090,7 @@ int main(int argc, char *argv[])
 	////////////////////////////////////////////////////////////
 
 	// Allocate I/Q buffer
+/*
 	iq_buff = calloc(2*iq_buff_size, 2);
 
 	if (iq_buff==NULL)
@@ -2097,7 +2098,7 @@ int main(int argc, char *argv[])
 		printf("ERROR: Faild to allocate 16-bit I/Q buffer.\n");
 		exit(1);
 	}
-
+*/
 	if (data_format==SC08)
 	{
 		iq8_buff = calloc(2*iq_buff_size, 1);
@@ -2328,7 +2329,7 @@ int main(int argc, char *argv[])
 	printf("\nDone!\n");
 
 	// Free I/Q buffer
-	free(iq_buff);
+	//free(iq_buff);
 
 	// Close file
 	fclose(fp);
