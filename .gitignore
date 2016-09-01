@@ -1,5 +1,6 @@
 ad9361-iiostream
 iio-monitor
+gps-sdr-sim
 !Makefile
 *.o
 *~

@@ -14,7 +14,7 @@
 # Lesser General Public License for more details.
 
 
-TARGETS := ad9361-iiostream
+TARGETS := ad9361-iiostream gps-sdr-sim
 
 CFLAGS = -Wall
 
@@ -24,6 +24,10 @@ all: $(TARGETS)
 
 ad9361-iiostream : ad9361-iiostream.o
 	$(CC) -o $@ $^ $(LDFLAGS) -liio
+
+gps-sdr-sim : gpssim.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm -O3
+#gcc gpssim.c -lm -O3 -o gps-sdr-sim
 
 clean:
 	rm -f $(TARGETS) $(TARGETS:%=%.o)
