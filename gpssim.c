@@ -2124,6 +2124,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	iq_buff=iio_buffer_start(txbuf);
 	////////////////////////////////////////////////////////////
 	// Initialize channels
 	////////////////////////////////////////////////////////////
@@ -2281,7 +2282,8 @@ int main(int argc, char *argv[])
 			for (isamp=0; isamp<2*iq_buff_size; isamp++)
 				iq_buff[isamp] = iq_buff[isamp]>0?1000:-1000; // Emulated 1-bit I/Q
 			*/
-			fwrite(iq_buff, 2, 2*iq_buff_size, fp);
+		//	fwrite(iq_buff, 2, 2*iq_buff_size, fp);
+			iio_buffer_push(txbuf);
 		}
 
 		//
