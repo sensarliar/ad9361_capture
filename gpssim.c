@@ -2335,6 +2335,7 @@ int main(int argc, char *argv[])
 
 	// Process time
 	printf("Process time = %.1f [sec]\n", (double)(tend-tstart)/CLOCKS_PER_SEC);
-
+	
+	shutdown();
 	return(0);
 }

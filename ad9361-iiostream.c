@@ -4,9 +4,9 @@
 /* cleanup and exit */
 void shutdown()
 {
-if(infile){fclose(infile);}
+//if(infile){fclose(infile);}
 	printf("* Destroying buffers\n");
-	if (rxbuf) { iio_buffer_destroy(rxbuf); }
+	//if (rxbuf) { iio_buffer_destroy(rxbuf); }
 	if (txbuf) { iio_buffer_destroy(txbuf); }
 
 	printf("* Disabling streaming channels\n");

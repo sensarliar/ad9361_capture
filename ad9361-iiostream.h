@@ -34,11 +34,11 @@ static struct iio_channel *rx0_i = NULL;
 static struct iio_channel *rx0_q = NULL;
 static struct iio_channel *tx0_i = NULL;
 static struct iio_channel *tx0_q = NULL;
-static struct iio_buffer  *rxbuf = NULL;
+//static struct iio_buffer  *rxbuf = NULL;
 static struct iio_buffer  *txbuf = NULL;
 
 static bool stop;
-FILE *infile;
+//FILE *infile;
 
 //#define NUM_PUSH_BUF 260000/16
 #define NUM_PUSH_BUF 16250
