@@ -12,6 +12,7 @@
 #include <unistd.h>
 #endif
 #include "gpssim.h"
+#include "ad9361-iiostream.h"
 
 int sinTable512[] = {
 	   2,   5,   8,  11,  14,  17,  20,  23,  26,  29,  32,  35,  38,  41,  44,  47,
@@ -1840,6 +1841,72 @@ int main(int argc, char *argv[])
 	samp_freq *= 10.0;
 
 	delt = 1.0/samp_freq;
+
+
+	////////////////////////////////////////////////////////////
+	// ad9361 libiio init
+	////////////////////////////////////////////////////////////
+
+
+	// Streaming devices
+	struct iio_device *tx;
+	struct iio_device *rx;
+
+	// RX and TX sample counters
+	//size_t nrx = 0;
+	//size_t ntx = 0;
+
+	// Stream configurations
+	struct stream_cfg rxcfg;
+	struct stream_cfg txcfg;
+
+	// Listen to ctrl+c and assert
+	signal(SIGINT, handle_sig);
+
+	// RX stream config
+	rxcfg.bw_hz = MHZ(2.5);   // 2 MHz rf bandwidth
+	rxcfg.fs_hz = MHZ(2.6);   // 2.5 MS/s rx sample rate
+	rxcfg.lo_hz = GHZ(0.9); // 2.5 GHz rf frequency
+	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
+
+	// TX stream config
+	txcfg.bw_hz = MHZ(2.5); // 1.5 MHz rf bandwidth
+	txcfg.fs_hz = MHZ(2.6);   // 2.5 MS/s tx sample rate
+	txcfg.lo_hz = GHZ(1.57542); // 2.5 GHz rf frequency
+	txcfg.rfport = "A"; // port A (select for rf freq.)
+
+	printf("* Acquiring IIO context\n");
+	assert((ctx = iio_create_default_context()) && "No context");
+	assert(iio_context_get_devices_count(ctx) > 0 && "No devices");
+
+	printf("* Acquiring AD9361 streaming devices\n");
+	assert(get_ad9361_stream_dev(ctx, TX, &tx) && "No tx dev found");
+	assert(get_ad9361_stream_dev(ctx, RX, &rx) && "No rx dev found");
+
+	printf("* Configuring AD9361 for streaming\n");
+	assert(cfg_ad9361_streaming_ch(ctx, &rxcfg, RX, 0) && "RX port 0 not found");
+	assert(cfg_ad9361_streaming_ch(ctx, &txcfg, TX, 0) && "TX port 0 not found");
+
+	printf("* Initializing AD9361 IIO streaming channels\n");
+	assert(get_ad9361_stream_ch(ctx, RX, rx, 0, &rx0_i) && "RX chan i not found");
+	assert(get_ad9361_stream_ch(ctx, RX, rx, 1, &rx0_q) && "RX chan q not found");
+	assert(get_ad9361_stream_ch(ctx, TX, tx, 0, &tx0_i) && "TX chan i not found");
+	assert(get_ad9361_stream_ch(ctx, TX, tx, 1, &tx0_q) && "TX chan q not found");
+
+	printf("* Enabling IIO streaming channels\n");
+	//iio_channel_enable(rx0_i);
+	//iio_channel_enable(rx0_q);
+	iio_channel_enable(tx0_i);
+	iio_channel_enable(tx0_q);
+
+	txbuf = iio_device_create_buffer(tx, iq_buff_size, false);
+	if (!txbuf) {
+		perror("Could not create TX buffer");
+		shutdown();
+	}
+
+	printf("* Starting IO streaming (press CTRL+C to cancel)\n");
+
 
 	////////////////////////////////////////////////////////////
 	// Receiver position

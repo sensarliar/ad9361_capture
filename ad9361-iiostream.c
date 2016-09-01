@@ -1,66 +1,8 @@
-/*
- * libiio - AD9361 IIO streaming example
- *
- * Copyright (C) 2014 IABG mbH
- * Author: Michael Feilen <feilen_at_iabg.de>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- **/
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <assert.h>
-#include <signal.h>
-#include <stdio.h>
-#include <iio.h>
-
-#include <unistd.h>
-
-/* helper macros */
-#define MHZ(x) ((long long)(x*1000000.0 + .5))
-#define GHZ(x) ((long long)(x*1000000000.0 + .5))
-
-/* RX is input, TX is output */
-enum iodev { RX, TX };
-
-/* common RX and TX streaming params */
-struct stream_cfg {
-	long long bw_hz; // Analog banwidth in Hz
-	long long fs_hz; // Baseband sample rate in Hz
-	long long lo_hz; // Local oscillator frequency in Hz
-	const char* rfport; // Port name
-};
-
-/* static scratch mem for strings */
-static char tmpstr[64];
-
-/* IIO structs required for streaming */
-static struct iio_context *ctx   = NULL;
-static struct iio_channel *rx0_i = NULL;
-static struct iio_channel *rx0_q = NULL;
-static struct iio_channel *tx0_i = NULL;
-static struct iio_channel *tx0_q = NULL;
-static struct iio_buffer  *rxbuf = NULL;
-static struct iio_buffer  *txbuf = NULL;
-
-static bool stop;
-FILE *infile;
-
-//#define NUM_PUSH_BUF 260000/16
-#define NUM_PUSH_BUF 16250
+#include "ad9361-iiostream.h"
 
 /* cleanup and exit */
-static void shutdown()
+void shutdown()
 {
 if(infile){fclose(infile);}
 	printf("* Destroying buffers\n");
@@ -78,7 +20,7 @@ if(infile){fclose(infile);}
 	exit(0);
 }
 
-static void handle_sig(int sig)
+void handle_sig(int sig)
 {
 	printf("Waiting for process to finish...\n");
 	stop = true;
@@ -117,7 +59,7 @@ static struct iio_device* get_ad9361_phy(struct iio_context *ctx)
 }
 
 /* finds AD9361 streaming IIO devices */
-static bool get_ad9361_stream_dev(struct iio_context *ctx, enum iodev d, struct iio_device **dev)
+bool get_ad9361_stream_dev(struct iio_context *ctx, enum iodev d, struct iio_device **dev)
 {
 	switch (d) {
 	case TX: *dev = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc"); return *dev != NULL;
@@ -127,7 +69,7 @@ static bool get_ad9361_stream_dev(struct iio_context *ctx, enum iodev d, struct 
 }
 
 /* finds AD9361 streaming IIO channels */
-static bool get_ad9361_stream_ch(struct iio_context *ctx, enum iodev d, struct iio_device *dev, int chid, struct iio_channel **chn)
+bool get_ad9361_stream_ch(struct iio_context *ctx, enum iodev d, struct iio_device *dev, int chid, struct iio_channel **chn)
 {
 	*chn = iio_device_find_channel(dev, get_ch_name("voltage", chid), d == TX);
 	if (!*chn)
@@ -180,7 +122,7 @@ bool cfg_ad9361_streaming_ch(struct iio_context *ctx, struct stream_cfg *cfg, en
 
 
 
-/* simple configuration and streaming */
+/* simple configuration and streaming 
 int main (int argc, char **argv)
 {
 	// Streaming devices
@@ -233,14 +175,7 @@ int main (int argc, char **argv)
 	//iio_channel_enable(rx0_q);
 	iio_channel_enable(tx0_i);
 	iio_channel_enable(tx0_q);
-/*
-	printf("* Creating non-cyclic IIO buffers with 1 MiS\n");
-	rxbuf = iio_device_create_buffer(rx, 1024*1024, false);
-	if (!rxbuf) {
-		perror("Could not create RX buffer");
-		shutdown();
-	}
-*/
+
 	txbuf = iio_device_create_buffer(tx, NUM_PUSH_BUF, false);
 	if (!txbuf) {
 		perror("Could not create TX buffer");
@@ -298,3 +233,4 @@ printf("gaoming007\n");
 
 	return 0;
 } 
+*/
