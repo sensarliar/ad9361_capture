@@ -49,7 +49,7 @@
 #include <unistd.h>
 #include "rxfifo_reset.h"
 
-#define CHECKSUM_ENABLE
+//#define CHECKSUM_ENABLE
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
@@ -680,13 +680,17 @@ if(head_not_whole_flag==1)
 			if(next_ii==8)
 			{
 			pk_total_num= *(gm_p)+((*(gm_p+1))<<8);
+	#ifdef CHECKSUM_ENABLE
 		    	sum_r = *(gm_p+2)+((*(gm_p+3))<<8);
+	#endif
 			}
 			else if (next_ii==7)
 			{
 			//last_pk_total_num= *(gm_p+8);///length in next pkg
 			pk_total_num= last_pk_total_num+((*(gm_p))<<8);
+	#ifdef CHECKSUM_ENABLE
 		    	sum_r = *(gm_p+1)+((*(gm_p+2))<<8);
+	#endif
 			}
 	#ifdef CHECKSUM_ENABLE
 			else if (next_ii==6)
@@ -714,7 +718,9 @@ if((pk_total_num>1560)||(pk_total_num<50))
 	buf_send_p=0;
 pkg_cont_flag =0;
 next_ii=0;
+	#ifdef CHECKSUM_ENABLE
 sum_r =0;
+	#endif
 flag_search_both_pkg =0;
 head_not_whole_flag=0;
 	return !stop_capture;
