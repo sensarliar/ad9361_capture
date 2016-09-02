@@ -254,6 +254,15 @@ if(type == TX)
 
 void getPacket(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * packet)
 {
+
+
+     if(pthread_mutex_lock(&mutex)!=0)
+     {                     
+      perror("pthread_mutex_lock");                          
+     }                                                      
+     else  
+{
+
   short * id = (short *)arg;
   
 ++(*id);
@@ -272,112 +281,102 @@ unsigned int jjj=16;
             sum = do_checksum_math((uint16_t *)packet, pkthdr->len);
             sum = CHECKSUM_CARRY(sum);	
 	#endif
+
 	
-//	do{
+		//	do{
 
-		buf = iio_buffer_start(dds_buffer_gm);
-/*
-		buf[0]=0xAA;
-		//buf[1]=(u_char)(*id);
-buf[1]=0x55;
-buf[2]=0xBB;
-buf[3]=0x66;
-buf[4]=0xCC;
-buf[5]=0x77;
-buf[6]=0xDD;
-buf[7]=0x88;
-*/
-buf[0]=0x44;
-buf[1]=0x55;
-buf[2]=0x66;
-buf[3]=0x77;
-buf[4]=0x88;
-buf[5]=0x99;
-buf[6]=0x11;
-buf[7]=0x22;
+				buf = iio_buffer_start(dds_buffer_gm);
+		/*
+				buf[0]=0xAA;
+				//buf[1]=(u_char)(*id);
+		buf[1]=0x55;
+		buf[2]=0xBB;
+		buf[3]=0x66;
+		buf[4]=0xCC;
+		buf[5]=0x77;
+		buf[6]=0xDD;
+		buf[7]=0x88;
+		*/
+		buf[0]=0x44;
+		buf[1]=0x55;
+		buf[2]=0x66;
+		buf[3]=0x77;
+		buf[4]=0x88;
+		buf[5]=0x99;
+		buf[6]=0x11;
+		buf[7]=0x22;
 
-		buf[8]=(u_char)((pkthdr->len)&0xff);
-		buf[9]=(u_char)(((pkthdr->len)&0xff00)>>8);
-//buf[8] = 0x19;
-//buf[9] = 0x91;
-	#ifdef CHECKSUM_ENABLE	
-            //sum = do_checksum_math((uint16_t *)(&buf[16]), IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
-            //sum = CHECKSUM_CARRY(sum);
-		buf[10]=(u_char)(sum&0xff);
-		buf[11]=(u_char)((sum&0xff00)>>8);	
-	#endif
+				buf[8]=(u_char)((pkthdr->len)&0xff);
+				buf[9]=(u_char)(((pkthdr->len)&0xff00)>>8);
+		//buf[8] = 0x19;
+		//buf[9] = 0x91;
+			#ifdef CHECKSUM_ENABLE	
+			    //sum = do_checksum_math((uint16_t *)(&buf[16]), IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
+			    //sum = CHECKSUM_CARRY(sum);
+				buf[10]=(u_char)(sum&0xff);
+				buf[11]=(u_char)((sum&0xff00)>>8);	
+			#endif
 
-		buf[12]=(u_char)((*id)&0xff);
-		buf[13]=(u_char)(((*id)&0xff00)>>8);
+				buf[12]=(u_char)((*id)&0xff);
+				buf[13]=(u_char)(((*id)&0xff00)>>8);
 
-		if(len_left>IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)
+				if(len_left>IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)
+				{
+				//buf[4]=0xf8;
+				//buf[5]=0x03;	
+				buf[14]=(u_char)((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff);
+				buf[15]=(u_char)(((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff00)>>8);	
+				}else
+				{
+				buf[14]=(u_char)(len_left&0xff);
+				buf[15]=(u_char)((len_left&0xff00)>>8);		
+				}
+
+				  for(; i<pkthdr->len; )
+		  			{
+						buf[jjj] = packet[i];
+		//buf[jjj] = i;
+
+						++i,++jjj;
+						if(jjj>=IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE)
+						{
+		//printf("send big num :%d\n",jjj);
+		int ret =0;
+
+				ret = iio_buffer_push(dds_buffer_gm);
+				if (ret < 0)
+					printf("Error occured while writing to buffer: %d\n", ret);
+		  
+
+						jjj=0;
+						//break;
+				buf = iio_buffer_start(dds_buffer_gm);
+						}
+					 }
+		if((jjj>0) &&(jjj<IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE))
 		{
-		//buf[4]=0xf8;
-		//buf[5]=0x03;	
-		buf[14]=(u_char)((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff);
-		buf[15]=(u_char)(((IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16)&0xff00)>>8);	
-		}else
+
+		int tmp_jjj;
+		tmp_jjj=jjj/IIO_BUFFER_BUS_WIDTHS;
+		if(jjj%IIO_BUFFER_BUS_WIDTHS>0)
+		tmp_jjj++;
+		//printf("send num :%d\n",jjj);
+
+		//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);			
+
 		{
-		buf[14]=(u_char)(len_left&0xff);
-		buf[15]=(u_char)((len_left&0xff00)>>8);		
+		memset((u_char *)(iio_buffer_start(dds_buffer_gm))+jjj,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-jjj);
+		//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
+		iio_buffer_push(dds_buffer_gm);
 		}
 
-		  for(; i<pkthdr->len; )
-  			{
-				buf[jjj] = packet[i];
-//buf[jjj] = i;
+		}
 
-				++i,++jjj;
-				if(jjj>=IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE)
-				{
-//printf("send big num :%d\n",jjj);
-int ret =0;
-     if(pthread_mutex_lock(&mutex)!=0)
-     {                     
-      perror("pthread_mutex_lock");                          
-     }                                                      
-     else   
-		ret = iio_buffer_push(dds_buffer_gm);
-		if (ret < 0)
-			printf("Error occured while writing to buffer: %d\n", ret);
-     if(pthread_mutex_unlock(&mutex)!=0){                   
-     perror("pthread_mutex_unlock");                        
-     }    
-timer_set();
-
-				jjj=0;
-				//break;
-		buf = iio_buffer_start(dds_buffer_gm);
-				}
-			 }
-if((jjj>0) &&(jjj<IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE))
-{
-
-int tmp_jjj;
-tmp_jjj=jjj/IIO_BUFFER_BUS_WIDTHS;
-if(jjj%IIO_BUFFER_BUS_WIDTHS>0)
-tmp_jjj++;
-//printf("send num :%d\n",jjj);
-
-//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);			
-     if(pthread_mutex_lock(&mutex)!=0)
-     {                     
-      perror("pthread_mutex_lock");                          
-     }                                                      
-     else  
-{
-memset((u_char *)(iio_buffer_start(dds_buffer_gm))+jjj,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-jjj);
-//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
-iio_buffer_push(dds_buffer_gm);
 }
      if(pthread_mutex_unlock(&mutex)!=0){                   
      perror("pthread_mutex_unlock");                        
      }    
 timer_set();
-}
-
-
-
 	// len_left=len_left-(IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-16);
 	//}while(len_left>0);
 
