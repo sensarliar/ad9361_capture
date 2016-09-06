@@ -1898,6 +1898,7 @@ int main(int argc, char *argv[])
 	//iio_channel_enable(rx0_q);
 	iio_channel_enable(tx0_i);
 	iio_channel_enable(tx0_q);
+iio_device_set_kernel_buffers_count(tx,16);
 
 	txbuf = iio_device_create_buffer(tx, iq_buff_size, false);
 	if (!txbuf) {
