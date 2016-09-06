@@ -1836,9 +1836,9 @@ int main(int argc, char *argv[])
 	}
 
 	// Buffer size	
-	samp_freq = floor(samp_freq/10.0);
-	iq_buff_size = (int)samp_freq; // samples per 0.1sec
-	samp_freq *= 10.0;
+	samp_freq = floor(samp_freq/100.0);
+	iq_buff_size = (int)samp_freq; // samples per 0.01sec
+	samp_freq *= 100.0;
 
 	delt = 1.0/samp_freq;
 
@@ -1942,7 +1942,7 @@ int main(int argc, char *argv[])
 		printf("Using static location mode.\n");
 		llh2xyz(llh,xyz[0]); // Convert llh to xyz
 
-		numd = iduration;
+		numd = iduration*10;
 		
 		for (iumd=1; iumd<numd; iumd++)
 		{
@@ -2165,7 +2165,7 @@ int main(int argc, char *argv[])
 	tstart = clock();
 
 	// Update receiver time
-	grx.sec += 0.1;
+	grx.sec += 0.01;
 
 	for (iumd=1; iumd<numd; iumd++)
 	{
@@ -2291,7 +2291,7 @@ int main(int argc, char *argv[])
 		// Update navigation message and channel allocation every 30 seconds
 		//
 
-		igrx = (int)(grx.sec*10.0+0.5);
+		igrx = (int)(grx.sec*100.0+0.5);
 
 		if (igrx%300==0) // Every 30 seconds
 		{
@@ -2317,7 +2317,7 @@ int main(int argc, char *argv[])
 		}
 
 		// Update receiver time
-		grx.sec += 0.1;
+		grx.sec += 0.01;
 
 		// Update time counter
 		printf("\rTime into run = %4.1f", grx.sec-g0.sec);
