@@ -61,7 +61,7 @@
   pcap_t * device_eth0; 
 pcap_t * device_eth1;
 struct iio_buffer *dds_buffer_gm;
-
+int buf_tx_delay = 0;
    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* RX is input, TX is output */
@@ -346,7 +346,7 @@ unsigned int jjj=16;
 				ret = iio_buffer_push(dds_buffer_gm);
 				if (ret < 0)
 					printf("Error occured while writing to buffer: %d\n", ret);
-		  
+		  usleep(buf_tx_delay);
 
 						jjj=0;
 						//break;
@@ -863,7 +863,7 @@ int bandwidth=18;
 int gain=0;
 	int c;
 //	opterr = 0;
-	while ((c = getopt (argc, argv, "r:t:b:g:?")) != -1)
+	while ((c = getopt (argc, argv, "r:t:b:g:D:?")) != -1)
 		switch (c) {
 			case 'r':
 rx_freq =atoi(optarg);
@@ -882,6 +882,10 @@ printf("bandwidth:%d MHz\n",bandwidth);
 			case 'g':
 gain =atoi(optarg);
 printf("gain:%d\n",gain);
+				break;
+			case 'D':
+buf_tx_delay =atoi(optarg);
+printf("buffer tx delay:%d\n",buf_tx_delay);
 				break;
 
 			case '?':
