@@ -13,3 +13,5 @@ void reset_qpsk_rx(void);
 void unreset_qpsk_rx(void);
 
 
+unsigned int rd_txfifo_hf_flag(void);
+

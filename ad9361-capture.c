@@ -342,6 +342,10 @@ unsigned int jjj=16;
 						{
 		//printf("send big num :%d\n",jjj);
 		int ret =0;
+while(rd_txfifo_hf_flag())
+{
+	usleep(2);
+}
 
 				ret = iio_buffer_push(dds_buffer_gm);
 				if (ret < 0)
@@ -367,6 +371,10 @@ unsigned int jjj=16;
 		{
 		memset((u_char *)(iio_buffer_start(dds_buffer_gm))+jjj,0,IIO_BUFFER_BUS_WIDTHS*IIO_BUFFER_SIZE-jjj);
 		//iio_buffer_push_partial(dds_buffer_gm,tmp_jjj);
+while(rd_txfifo_hf_flag())
+{
+	usleep(2);
+}
 		iio_buffer_push(dds_buffer_gm);
 		}
 

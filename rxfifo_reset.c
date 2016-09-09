@@ -52,7 +52,7 @@ int uio_rd(const char *dev, unsigned int reg_addr, unsigned int* reg_val)
 	uio_addr = mmap(NULL, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, uio_fd, 0);
 
 	*reg_val = *((unsigned *) (uio_addr + reg_addr));
-	printf("r: reg[0x%x] = 0x%x\n\r", reg_addr, *reg_val);
+	//printf("r: reg[0x%x] = 0x%x\n\r", reg_addr, *reg_val);
 
 	munmap(uio_addr, 0x1000);
 	close(uio_fd);
@@ -75,3 +75,11 @@ void unreset_qpsk_rx(void)
 	uio_wr("/dev/mwipcore", 0x00, 0x00);
 }
 
+unsigned int rd_txfifo_hf_flag(void)
+{
+	unsigned int hf_flag=0;
+	uio_rd("/dev/mwipcore2", 0x00, &hf_flag);
+	hf_flag = hf_flag&0x00000001;
+	return hf_flag;
+
+}
