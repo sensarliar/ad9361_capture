@@ -893,6 +893,7 @@ int rx_freq=2400;
 int tx_freq=2400;
 int bandwidth=18;
 int gain=0;
+/////gain need to be negative for example -10
 	int c;
 //	opterr = 0;
 	while ((c = getopt (argc, argv, "r:t:b:g:?")) != -1)
@@ -963,8 +964,8 @@ txcfg.bw_hz = MHZ(bandwidth);
 	txcfg.fs_hz = MHZ(61.44);   // 2.5 MS/s tx sample rate
 	txcfg.lo_hz = MHZ(tx_freq); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
-txcfg.hardwaregain = 0;
-//txcfg.hardwaregain = gain;
+//txcfg.hardwaregain = 0;
+txcfg.hardwaregain = gain;
 
 	printf("* Acquiring IIO context\n");
 	assert((ctx = iio_create_default_context()) && "No context");
