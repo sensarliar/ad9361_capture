@@ -258,6 +258,7 @@ unsigned int rd_txfifo_hf_flag(void)
 //	uio_rd("/dev/mwipcore2", 0x00, &hf_flag);
 //gm_rd("/dev/mwipcore2", &hf_flag);
 //msync(uio_addr,100,MS_INVALIDATE);
+lseek(uio_fd,0,SEEK_SET);
 	hf_flag = *((unsigned *) (uio_addr));
 	hf_flag = hf_flag&0x00000001;
 	return hf_flag;
