@@ -49,7 +49,7 @@
 #include <unistd.h>
 #include "rxfifo_reset.h"
 
-//#define CHECKSUM_ENABLE
+#define CHECKSUM_ENABLE
 
 /* helper macros */
 #define MHZ(x) ((long long)(x*1000000.0 + .5))
@@ -88,6 +88,9 @@ static struct iio_channel *tx0_i = NULL;
 static struct iio_channel *tx0_q = NULL;
 static struct iio_buffer  *rxbuf = NULL;
 static struct iio_buffer  *txbuf = NULL;
+
+	int uio_fd;
+	void *uio_addr;
 
 static bool stop;
 #ifdef CHECKSUM_ENABLE
@@ -138,6 +141,8 @@ timer_stop();
 
 	printf("* Destroying context\n");
 	if (ctx) { iio_context_destroy(ctx); }
+	munmap(uio_addr, 0x1000);
+	close(uio_fd);
 	exit(0);
 }
 
@@ -247,6 +252,17 @@ if(type == TX)
 }
 
 
+unsigned int rd_txfifo_hf_flag(void)
+{
+	unsigned int hf_flag=0;
+//	uio_rd("/dev/mwipcore2", 0x00, &hf_flag);
+//gm_rd("/dev/mwipcore2", &hf_flag);
+//msync(uio_addr,100,MS_INVALIDATE);
+	hf_flag = *((unsigned *) (uio_addr));
+	hf_flag = hf_flag&0x00000001;
+	return hf_flag;
+
+}
 
 
 
@@ -346,7 +362,7 @@ unsigned int jjj=16;
 while(rd_txfifo_hf_flag())
 {
 flag_num++;
-printf("tx fifo half full flag was set %d.\n",flag_num);
+//printf("tx fifo half full flag was set %d.\n",flag_num);
 	usleep(10);
 }
 
@@ -379,7 +395,7 @@ printf("tx fifo half full flag was set %d.\n",flag_num);
 while(rd_txfifo_hf_flag())
 {
 flag_num++;
-printf("tx fifo half full flag was set %d.\n",flag_num);
+//printf("tx fifo half full flag was set %d.\n",flag_num);
 	usleep(10);
 }
 
@@ -999,6 +1015,17 @@ unreset_qpsk_rx();
 printf("iio_device_get_sample_size  %d\n",iio_device_get_sample_size(tx));
 open_eth0();
 //open_eth1();
+
+
+
+	uio_fd = open("/dev/mwipcore2", O_RDWR);
+	if(uio_fd < 1)
+	{
+		printf("error: invalid uio_fd\n\r");
+		return -1;
+	}
+
+	uio_addr = mmap(NULL, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, uio_fd, 0);
 
 
 

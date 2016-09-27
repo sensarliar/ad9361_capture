@@ -1,19 +1,6 @@
 
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <assert.h>
-#include <signal.h>
-#include <stdio.h>
-#include <iio.h>
-#include <math.h>
 
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #include "rxfifo_reset.h"
 
 int uio_wr(const char *dev, unsigned int reg_addr, unsigned int reg_val)
@@ -90,13 +77,14 @@ void unreset_qpsk_rx(void)
 
 	uio_wr("/dev/mwipcore", 0x00, 0x00);
 }
-
+/*
 unsigned int rd_txfifo_hf_flag(void)
 {
 	unsigned int hf_flag=0;
-	uio_rd("/dev/mwipcore2", 0x00, &hf_flag);
+//	uio_rd("/dev/mwipcore2", 0x00, &hf_flag);
 //gm_rd("/dev/mwipcore2", &hf_flag);
 	hf_flag = hf_flag&0x00000001;
 	return hf_flag;
 
 }
+*/
